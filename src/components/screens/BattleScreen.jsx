@@ -9,6 +9,7 @@ export function BattleScreen({
   playerClicks,
   opponentClicks,
   timeLeft,
+  combo,
   promptPhase,
   promptType,
   promptResult,
@@ -29,7 +30,14 @@ export function BattleScreen({
       </div>
 
       <div className="flex items-center justify-between shrink-0 px-1">
-        <span className="font-mono text-sm text-gray-400">{playerClicks} hits</span>
+        <span className="font-mono text-sm text-gray-400">
+          {playerClicks} hits
+          {combo > 1 && (
+            <span className={`ml-2 font-black ${combo >= 4 ? 'text-orange-400 animate-pulse' : combo >= 3 ? 'text-yellow-400' : 'text-green-400'}`}>
+              ×{combo}
+            </span>
+          )}
+        </span>
         <span className={`font-black text-2xl tabular-nums ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
           {timeLeft}s
         </span>
@@ -54,6 +62,7 @@ export function BattleScreen({
       <div className="flex-1 min-h-0" />
 
       <AttackButton
+        combo={combo}
         isStunned={isStunned}
         promptPhase={promptPhase}
         promptType={promptType}

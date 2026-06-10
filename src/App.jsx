@@ -30,6 +30,7 @@ function Game() {
     matchResult,
     resultCooldown,
     countdown,
+    combo,
     startMatch,
     handlePointerDown,
     handlePointerUp,
@@ -63,6 +64,7 @@ function Game() {
           playerClicks={playerClicks}
           opponentClicks={opponentClicks}
           timeLeft={timeLeft}
+          combo={combo}
           promptPhase={prompt.promptPhase}
           promptType={prompt.promptType}
           promptResult={prompt.promptResult}

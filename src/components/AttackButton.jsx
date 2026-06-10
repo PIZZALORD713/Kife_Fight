@@ -9,17 +9,17 @@ function getButtonStyle(isStunned, promptPhase, promptType) {
   return 'bg-red-600 hover:bg-red-500 active:scale-95';
 }
 
-function getButtonLabel(isStunned, promptPhase, promptType, isHolding) {
+function getButtonLabel(isStunned, promptPhase, promptType, isHolding, combo) {
   if (isStunned) return '💫 STUNNED';
   if (promptPhase === 'active') {
     if (promptType === 'HOLD')   return isHolding ? '✊ HOLDING...' : '✋ PRESS & HOLD';
     if (promptType === 'PAUSE')  return '🛑 STOP!';
     if (promptType === 'DOUBLE') return '👆 TAP TWICE!';
   }
-  return '⚔️ ATTACK';
+  return combo > 1 ? `⚔️ ATTACK ×${combo}` : '⚔️ ATTACK';
 }
 
-export function AttackButton({ isStunned, promptPhase, promptType, isHolding, onPointerDown, onPointerUp, onPointerLeave }) {
+export function AttackButton({ combo = 1, isStunned, promptPhase, promptType, isHolding, onPointerDown, onPointerUp, onPointerLeave }) {
   const disabled = isStunned || (promptPhase === 'active' && promptType === 'PAUSE');
   return (
     <div className="shrink-0 flex flex-col gap-1.5">
@@ -31,7 +31,7 @@ export function AttackButton({ isStunned, promptPhase, promptType, isHolding, on
         className={`w-full py-5 rounded-xl font-black text-xl transition-all select-none touch-none ${getButtonStyle(isStunned, promptPhase, promptType)}`}
         style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
       >
-        {getButtonLabel(isStunned, promptPhase, promptType, isHolding)}
+        {getButtonLabel(isStunned, promptPhase, promptType, isHolding, combo)}
       </button>
       <p className="text-center text-gray-600 text-xs">Tap rapidly · SPACEBAR</p>
     </div>

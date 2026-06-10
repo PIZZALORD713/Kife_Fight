@@ -1,5 +1,5 @@
 // src/hooks/usePromptSystem.js
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   PROMPT_TYPES,
   TELEGRAPH_MIN,
@@ -15,7 +15,13 @@ import {
   PROMPT_SPAWN_MAX,
 } from '../constants/game';
 
-export function usePromptSystem({ battleEndedRef }) {
+export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
+  const onSuccessRef = useRef(onSuccess);
+  const onFailRef = useRef(onFail);
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onFailRef.current = onFail;
+  });
   const [promptPhase, setPromptPhase] = useState(null);
   const [promptType, setPromptType] = useState(null);
   const [promptResult, setPromptResult] = useState(null);
@@ -79,6 +85,7 @@ export function usePromptSystem({ battleEndedRef }) {
     setHoldProgress(0);
     holdStartRef.current = null;
     setPromptResult('success');
+    onSuccessRef.current?.();
     syncOpponentStaggered(true);
     setTimeout(() => syncOpponentStaggered(false), STAGGER_DURATION);
     setTimeout(() => setPromptResult(null), 700);
@@ -93,6 +100,7 @@ export function usePromptSystem({ battleEndedRef }) {
     setHoldProgress(0);
     holdStartRef.current = null;
     setPromptResult('fail');
+    onFailRef.current?.();
     syncIsStunned(true);
     stunTimeoutRef.current = setTimeout(() => {
       syncIsStunned(false);

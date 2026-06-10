@@ -13,9 +13,9 @@ function getStatusDisplay(isStunned, promptPhase, promptType, promptResult) {
     if (promptType === 'DOUBLE') return { label: '👆 DOUBLE TAP NOW',  color: 'text-yellow-300', bg: 'bg-yellow-900/50 border border-yellow-500' };
   }
   if (promptResult === 'success')
-    return { label: '✅ NICE! BONUS DAMAGE', color: 'text-green-400', bg: 'bg-green-900/40 border border-green-600' };
+    return { label: '✅ CRITICAL HIT! COMBO UP', color: 'text-green-400', bg: 'bg-green-900/40 border border-green-600' };
   if (promptResult === 'fail')
-    return { label: '❌ FAILED!', color: 'text-red-400', bg: 'bg-red-900/40 border border-red-600' };
+    return { label: '❌ FAILED! COMBO LOST', color: 'text-red-400', bg: 'bg-red-900/40 border border-red-600' };
   return null;
 }
 
