@@ -1,11 +1,10 @@
 // src/hooks/useGameState.js
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { BATTLE_DURATION, RESULT_COOLDOWN, OPPONENT_INTERVAL } from '../constants/game';
+import { BATTLE_DURATION, RESULT_COOLDOWN, OPPONENT_INTERVAL, COMBO_MAX, PROMPT_SUCCESS_DAMAGE } from '../constants/game';
 import { usePromptSystem } from './usePromptSystem';
 
 export function useGameState() {
-  const [gameState, setGameState] = useState('connect');
-  const [walletAddress, setWalletAddress] = useState('');
+  const [gameState, setGameState] = useState('lobby');
   const [playerHealth, setPlayerHealth] = useState(100);
   const [opponentHealth, setOpponentHealth] = useState(100);
   const [playerClicks, setPlayerClicks] = useState(0);
@@ -15,14 +14,33 @@ export function useGameState() {
   const [matchResult, setMatchResult] = useState(null);
   const [resultCooldown, setResultCooldown] = useState(0);
   const [countdown, setCountdown] = useState(3);
+  const [combo, setCombo] = useState(1);
 
+  const comboRef = useRef(1);
   const battleEndedRef = useRef(false);
   const playerHealthRef = useRef(100);
   const opponentHealthRef = useRef(100);
   const battleTimerRef = useRef(null);
   const opponentAIRef = useRef(null);
 
-  const prompt = usePromptSystem({ battleEndedRef });
+  const prompt = usePromptSystem({
+    battleEndedRef,
+    onSuccess: () => {
+      setOpponentHealth(h => {
+        const next = Math.max(0, h - PROMPT_SUCCESS_DAMAGE);
+        opponentHealthRef.current = next;
+        if (next <= 0 && !battleEndedRef.current) endBattle();
+        return next;
+      });
+      const next = Math.min(COMBO_MAX, comboRef.current + 1);
+      comboRef.current = next;
+      setCombo(next);
+    },
+    onFail: () => {
+      comboRef.current = 1;
+      setCombo(1);
+    },
+  });
 
   const clearBattleTimers = useCallback(() => {
     clearInterval(battleTimerRef.current);
@@ -47,12 +65,6 @@ export function useGameState() {
     setResultCooldown(RESULT_COOLDOWN);
   }, [clearBattleTimers]);
 
-  const connectWallet = useCallback(() => {
-    const rand = () => Math.random().toString(16).slice(2, 6).toUpperCase();
-    setWalletAddress(`0x${rand()}${rand()}...${rand()}`);
-    setGameState('lobby');
-  }, []);
-
   const startMatch = useCallback(() => {
     clearBattleTimers();
     prompt.reset();
@@ -64,6 +76,8 @@ export function useGameState() {
     setOpponentClicks(0);
     setTimeLeft(BATTLE_DURATION);
     setMatchResult(null);
+    setCombo(1);
+    comboRef.current = 1;
     battleEndedRef.current = false;
     playerHealthRef.current = 100;
     opponentHealthRef.current = 100;
@@ -75,8 +89,9 @@ export function useGameState() {
       prompt.handleAttackDuringPrompt();
       return;
     }
+    const damage = comboRef.current;
     setOpponentHealth(h => {
-      const next = Math.max(0, h - 1);
+      const next = Math.max(0, h - damage);
       opponentHealthRef.current = next;
       if (next <= 0 && !battleEndedRef.current) endBattle();
       return next;
@@ -157,7 +172,6 @@ export function useGameState() {
 
   return {
     gameState,
-    walletAddress,
     playerHealth,
     opponentHealth,
     playerClicks,
@@ -168,7 +182,7 @@ export function useGameState() {
     matchResult,
     resultCooldown,
     countdown,
-    connectWallet,
+    combo,
     startMatch,
     handlePointerDown,
     handlePointerUp,

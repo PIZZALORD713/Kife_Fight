@@ -1,10 +1,10 @@
 // src/components/screens/LobbyScreen.jsx
-export function LobbyScreen({ walletAddress, stakeAmount, setStakeAmount, onEnterArena }) {
+export function LobbyScreen({ stakeAmount, setStakeAmount, onEnterArena }) {
   return (
     <div className="flex-1 flex flex-col p-5 gap-4">
       <div className="text-center">
-        <div className="text-green-400 text-xs font-mono tracking-widest">✓ CONNECTED</div>
-        <div className="text-gray-400 font-mono text-xs mt-0.5">{walletAddress}</div>
+        <div className="text-yellow-400 text-xs font-mono tracking-widest">🎮 PRACTICE MODE</div>
+        <div className="text-gray-400 font-mono text-xs mt-0.5">Stakes are simulated — crypto rails coming later</div>
       </div>
       <div className="flex-1 flex flex-col justify-center gap-4">
         <div>
