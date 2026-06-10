@@ -4,8 +4,7 @@ import { BATTLE_DURATION, RESULT_COOLDOWN, OPPONENT_INTERVAL, COMBO_MAX, PROMPT_
 import { usePromptSystem } from './usePromptSystem';
 
 export function useGameState() {
-  const [gameState, setGameState] = useState('connect');
-  const [walletAddress, setWalletAddress] = useState('');
+  const [gameState, setGameState] = useState('lobby');
   const [playerHealth, setPlayerHealth] = useState(100);
   const [opponentHealth, setOpponentHealth] = useState(100);
   const [playerClicks, setPlayerClicks] = useState(0);
@@ -65,12 +64,6 @@ export function useGameState() {
     setGameState('result');
     setResultCooldown(RESULT_COOLDOWN);
   }, [clearBattleTimers]);
-
-  const connectWallet = useCallback(() => {
-    const rand = () => Math.random().toString(16).slice(2, 6).toUpperCase();
-    setWalletAddress(`0x${rand()}${rand()}...${rand()}`);
-    setGameState('lobby');
-  }, []);
 
   const startMatch = useCallback(() => {
     clearBattleTimers();
@@ -179,7 +172,6 @@ export function useGameState() {
 
   return {
     gameState,
-    walletAddress,
     playerHealth,
     opponentHealth,
     playerClicks,
@@ -191,7 +183,6 @@ export function useGameState() {
     resultCooldown,
     countdown,
     combo,
-    connectWallet,
     startMatch,
     handlePointerDown,
     handlePointerUp,
