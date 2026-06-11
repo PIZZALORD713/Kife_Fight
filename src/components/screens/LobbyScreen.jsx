@@ -19,6 +19,7 @@ export function LobbyScreen({ stakeAmount, setStakeAmount, onEnterArena }) {
           />
         </div>
         <div className="bg-gray-700/50 rounded-xl p-4 text-sm text-gray-400 space-y-1.5">
+          <div className="flex justify-between"><span>Format</span><span className="text-white font-mono">Best of 3 rounds</span></div>
           <div className="flex justify-between"><span>Your stake</span><span className="text-white font-mono">{stakeAmount} ETH</span></div>
           <div className="flex justify-between"><span>Potential win</span><span className="text-green-400 font-mono">{(parseFloat(stakeAmount || 0) * 1.9).toFixed(3)} ETH</span></div>
           <div className="flex justify-between"><span>Protocol fee</span><span className="text-gray-500 font-mono">5%</span></div>
