@@ -1,10 +1,11 @@
-// src/components/AttackButton.jsx
 function getButtonStyle(isStunned, promptPhase, promptType) {
   if (isStunned) return 'bg-gray-600 cursor-not-allowed opacity-60';
   if (promptPhase === 'active') {
     if (promptType === 'HOLD')   return 'bg-blue-600 hover:bg-blue-500 active:scale-95';
     if (promptType === 'PAUSE')  return 'bg-purple-700 cursor-not-allowed opacity-80';
     if (promptType === 'DOUBLE') return 'bg-yellow-600 hover:bg-yellow-500 active:scale-95';
+    if (promptType === 'MASH')   return 'bg-orange-600 hover:bg-orange-500 active:scale-95 animate-pulse';
+    if (promptType === 'TIMING') return 'bg-emerald-600 hover:bg-emerald-500 active:scale-95';
   }
   return 'bg-red-600 hover:bg-red-500 active:scale-95';
 }
@@ -13,8 +14,10 @@ function getButtonLabel(isStunned, promptPhase, promptType, isHolding, combo) {
   if (isStunned) return '💫 STUNNED';
   if (promptPhase === 'active') {
     if (promptType === 'HOLD')   return isHolding ? '✊ HOLDING...' : '✋ PRESS & HOLD';
-    if (promptType === 'PAUSE')  return '🛑 STOP!';
+    if (promptType === 'PAUSE')  return '🥶 FREEZE!';
     if (promptType === 'DOUBLE') return '👆 TAP TWICE!';
+    if (promptType === 'MASH')   return '👊 MASH MASH MASH!';
+    if (promptType === 'TIMING') return '🎯 TAP NOW!';
   }
   return combo > 1 ? `⚔️ ATTACK ×${combo}` : '⚔️ ATTACK';
 }

@@ -20,6 +20,9 @@ export default function App() {
     resultCooldown,
     countdown,
     combo,
+    playerShield,
+    rewardEvent,
+    shieldBlockEvent,
     startMatch,
     handlePointerDown,
     handlePointerUp,
@@ -46,10 +49,18 @@ export default function App() {
           opponentClicks={opponentClicks}
           timeLeft={timeLeft}
           combo={combo}
+          playerShield={playerShield}
+          rewardEvent={rewardEvent}
+          shieldBlockEvent={shieldBlockEvent}
           promptPhase={prompt.promptPhase}
           promptType={prompt.promptType}
           promptResult={prompt.promptResult}
           holdProgress={prompt.holdProgress}
+          pauseProgress={prompt.pauseProgress}
+          mashCount={prompt.mashCount}
+          mashProgress={prompt.mashProgress}
+          timingPosition={prompt.timingPosition}
+          timingZone={prompt.timingZone}
           isStunned={prompt.isStunned}
           holdStartRef={prompt.holdStartRef}
           onPointerDown={handlePointerDown}

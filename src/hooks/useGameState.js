@@ -1,6 +1,16 @@
 // src/hooks/useGameState.js
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { BATTLE_DURATION, RESULT_COOLDOWN, OPPONENT_INTERVAL, COMBO_MAX, PROMPT_SUCCESS_DAMAGE } from '../constants/game';
+import {
+  BATTLE_DURATION,
+  RESULT_COOLDOWN,
+  OPPONENT_INTERVAL,
+  COMBO_MAX,
+  PROMPT_SUCCESS_DAMAGE,
+  PROMPT_PERFECT_DAMAGE,
+  REWARD_BONUS_CHANCE,
+  HEAL_AMOUNT,
+  MAX_SHIELD,
+} from '../constants/game';
 import { usePromptSystem } from './usePromptSystem';
 
 export function useGameState() {
@@ -15,19 +25,24 @@ export function useGameState() {
   const [resultCooldown, setResultCooldown] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [combo, setCombo] = useState(1);
+  const [playerShield, setPlayerShield] = useState(0);
+  const [rewardEvent, setRewardEvent] = useState(null);
+  const [shieldBlockEvent, setShieldBlockEvent] = useState(null);
 
   const comboRef = useRef(1);
   const battleEndedRef = useRef(false);
   const playerHealthRef = useRef(100);
   const opponentHealthRef = useRef(100);
+  const playerShieldRef = useRef(0);
   const battleTimerRef = useRef(null);
   const opponentAIRef = useRef(null);
 
   const prompt = usePromptSystem({
     battleEndedRef,
-    onSuccess: () => {
+    onSuccess: (tier) => {
+      const damage = tier === 'perfect' ? PROMPT_PERFECT_DAMAGE : PROMPT_SUCCESS_DAMAGE;
       setOpponentHealth(h => {
-        const next = Math.max(0, h - PROMPT_SUCCESS_DAMAGE);
+        const next = Math.max(0, h - damage);
         opponentHealthRef.current = next;
         if (next <= 0 && !battleEndedRef.current) endBattle();
         return next;
@@ -35,6 +50,29 @@ export function useGameState() {
       const next = Math.min(COMBO_MAX, comboRef.current + 1);
       comboRef.current = next;
       setCombo(next);
+
+      let reward = 'damage';
+      if (tier === 'perfect') {
+        reward = Math.random() < 0.5 ? 'shield' : 'heal';
+      } else if (Math.random() < REWARD_BONUS_CHANCE) {
+        reward = Math.random() < 0.5 ? 'shield' : 'heal';
+      }
+
+      if (reward === 'shield') {
+        setPlayerShield(s => {
+          const shielded = Math.min(MAX_SHIELD, s + 1);
+          playerShieldRef.current = shielded;
+          return shielded;
+        });
+      } else if (reward === 'heal') {
+        setPlayerHealth(h => {
+          const healed = Math.min(100, h + HEAL_AMOUNT);
+          playerHealthRef.current = healed;
+          return healed;
+        });
+      }
+
+      setRewardEvent({ id: Date.now() + Math.random(), tier, reward, damage });
     },
     onFail: () => {
       comboRef.current = 1;
@@ -81,6 +119,10 @@ export function useGameState() {
     battleEndedRef.current = false;
     playerHealthRef.current = 100;
     opponentHealthRef.current = 100;
+    setPlayerShield(0);
+    playerShieldRef.current = 0;
+    setRewardEvent(null);
+    setShieldBlockEvent(null);
   }, [clearBattleTimers, prompt]);
 
   const handleAttack = useCallback(() => {
@@ -132,12 +174,18 @@ export function useGameState() {
       if (prompt.opponentStaggeredRef.current) return;
       if (prompt.promptPhaseRef.current === 'active') return;
       const damage = Math.random() > 0.85 ? 2 : 1;
-      setPlayerHealth(h => {
-        const next = Math.max(0, h - damage);
-        playerHealthRef.current = next;
-        if (next <= 0 && !battleEndedRef.current) endBattle();
-        return next;
-      });
+      if (playerShieldRef.current > 0) {
+        playerShieldRef.current -= 1;
+        setPlayerShield(playerShieldRef.current);
+        setShieldBlockEvent(Date.now() + Math.random());
+      } else {
+        setPlayerHealth(h => {
+          const next = Math.max(0, h - damage);
+          playerHealthRef.current = next;
+          if (next <= 0 && !battleEndedRef.current) endBattle();
+          return next;
+        });
+      }
       setOpponentClicks(c => c + 1);
     }, OPPONENT_INTERVAL + Math.random() * 80);
 
@@ -183,6 +231,9 @@ export function useGameState() {
     resultCooldown,
     countdown,
     combo,
+    playerShield,
+    rewardEvent,
+    shieldBlockEvent,
     startMatch,
     handlePointerDown,
     handlePointerUp,
