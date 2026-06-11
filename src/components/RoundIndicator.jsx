@@ -1,27 +1,20 @@
 // src/components/RoundIndicator.jsx
-import { MAX_ROUNDS, ROUNDS_TO_WIN } from '../constants/game';
-
-function Pips({ wins, align }) {
-  return (
-    <div className={`flex gap-1 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
-      {Array.from({ length: ROUNDS_TO_WIN }, (_, i) => (
-        <span
-          key={i}
-          className={`w-2 h-2 rounded-full ${i < wins ? 'bg-red-500' : 'bg-gray-600'}`}
-        />
-      ))}
-    </div>
-  );
-}
+import { MAX_ROUNDS } from '../constants/game';
 
 export function RoundIndicator({ roundNumber, playerRoundWins, opponentRoundWins }) {
   return (
-    <div className="flex items-center justify-center gap-3 shrink-0">
-      <Pips wins={playerRoundWins} />
-      <span className="text-[10px] font-mono uppercase tracking-widest text-gray-500">
+    <div className="flex items-center justify-center gap-3 mx-auto w-fit bg-gray-900/80 border border-gray-700 rounded-full px-4 py-1.5">
+      <span className="font-mono font-black text-base tabular-nums leading-none">
+        <span className="text-gray-500 mr-1.5 text-xs align-middle">YOU</span>
+        <span className="text-green-400">{playerRoundWins}</span>
+      </span>
+      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap">
         Round {roundNumber}/{MAX_ROUNDS}
       </span>
-      <Pips wins={opponentRoundWins} align="right" />
+      <span className="font-mono font-black text-base tabular-nums leading-none">
+        <span className="text-red-400">{opponentRoundWins}</span>
+        <span className="text-gray-500 ml-1.5 text-xs align-middle">THEM</span>
+      </span>
     </div>
   );
 }

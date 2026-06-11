@@ -1,5 +1,6 @@
 // src/App.jsx
 import { GameWindow } from './components/GameWindow';
+import { RoundIndicator } from './components/RoundIndicator';
 import { LobbyScreen } from './components/screens/LobbyScreen';
 import { CountdownScreen } from './components/screens/CountdownScreen';
 import { BattleScreen } from './components/screens/BattleScreen';
@@ -30,13 +31,24 @@ export default function App() {
     shieldBlockEvent,
     startMatch,
     startNextRound,
+    returnToLobby,
     handlePointerDown,
     handlePointerUp,
     prompt,
   } = useGameState();
 
   return (
-    <GameWindow>
+    <GameWindow
+      header={
+        gameState !== 'lobby' && (
+          <RoundIndicator
+            roundNumber={roundNumber}
+            playerRoundWins={playerRoundWins}
+            opponentRoundWins={opponentRoundWins}
+          />
+        )
+      }
+    >
       {gameState === 'lobby' && (
         <LobbyScreen
           stakeAmount={stakeAmount}
@@ -49,8 +61,6 @@ export default function App() {
           countdown={countdown}
           stakeAmount={stakeAmount}
           roundNumber={roundNumber}
-          playerRoundWins={playerRoundWins}
-          opponentRoundWins={opponentRoundWins}
         />
       )}
       {gameState === 'battle' && (
@@ -64,9 +74,6 @@ export default function App() {
           playerShield={playerShield}
           rewardEvent={rewardEvent}
           shieldBlockEvent={shieldBlockEvent}
-          roundNumber={roundNumber}
-          playerRoundWins={playerRoundWins}
-          opponentRoundWins={opponentRoundWins}
           promptPhase={prompt.promptPhase}
           promptType={prompt.promptType}
           promptResult={prompt.promptResult}
@@ -104,11 +111,10 @@ export default function App() {
           opponentHealth={opponentHealth}
           playerClicks={playerClicks}
           opponentClicks={opponentClicks}
-          roundNumber={roundNumber}
           playerRoundWins={playerRoundWins}
           opponentRoundWins={opponentRoundWins}
           resultCooldown={resultCooldown}
-          onRematch={startMatch}
+          onContinue={returnToLobby}
         />
       )}
     </GameWindow>
