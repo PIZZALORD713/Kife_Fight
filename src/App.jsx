@@ -4,6 +4,7 @@ import { LobbyScreen } from './components/screens/LobbyScreen';
 import { CountdownScreen } from './components/screens/CountdownScreen';
 import { BattleScreen } from './components/screens/BattleScreen';
 import { ResultScreen } from './components/screens/ResultScreen';
+import { RoundResultScreen } from './components/screens/RoundResultScreen';
 import { useGameState } from './hooks/useGameState';
 
 export default function App() {
@@ -17,6 +18,10 @@ export default function App() {
     stakeAmount,
     setStakeAmount,
     matchResult,
+    roundResult,
+    roundNumber,
+    playerRoundWins,
+    opponentRoundWins,
     resultCooldown,
     countdown,
     combo,
@@ -24,6 +29,7 @@ export default function App() {
     rewardEvent,
     shieldBlockEvent,
     startMatch,
+    startNextRound,
     handlePointerDown,
     handlePointerUp,
     prompt,
@@ -39,7 +45,13 @@ export default function App() {
         />
       )}
       {gameState === 'countdown' && (
-        <CountdownScreen countdown={countdown} stakeAmount={stakeAmount} />
+        <CountdownScreen
+          countdown={countdown}
+          stakeAmount={stakeAmount}
+          roundNumber={roundNumber}
+          playerRoundWins={playerRoundWins}
+          opponentRoundWins={opponentRoundWins}
+        />
       )}
       {gameState === 'battle' && (
         <BattleScreen
@@ -52,6 +64,9 @@ export default function App() {
           playerShield={playerShield}
           rewardEvent={rewardEvent}
           shieldBlockEvent={shieldBlockEvent}
+          roundNumber={roundNumber}
+          playerRoundWins={playerRoundWins}
+          opponentRoundWins={opponentRoundWins}
           promptPhase={prompt.promptPhase}
           promptType={prompt.promptType}
           promptResult={prompt.promptResult}
@@ -67,6 +82,20 @@ export default function App() {
           onPointerUp={handlePointerUp}
         />
       )}
+      {gameState === 'roundResult' && (
+        <RoundResultScreen
+          roundResult={roundResult}
+          roundNumber={roundNumber}
+          playerRoundWins={playerRoundWins}
+          opponentRoundWins={opponentRoundWins}
+          playerHealth={playerHealth}
+          opponentHealth={opponentHealth}
+          playerClicks={playerClicks}
+          opponentClicks={opponentClicks}
+          resultCooldown={resultCooldown}
+          onNextRound={startNextRound}
+        />
+      )}
       {gameState === 'result' && (
         <ResultScreen
           matchResult={matchResult}
@@ -75,6 +104,9 @@ export default function App() {
           opponentHealth={opponentHealth}
           playerClicks={playerClicks}
           opponentClicks={opponentClicks}
+          roundNumber={roundNumber}
+          playerRoundWins={playerRoundWins}
+          opponentRoundWins={opponentRoundWins}
           resultCooldown={resultCooldown}
           onRematch={startMatch}
         />

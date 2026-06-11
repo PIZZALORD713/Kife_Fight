@@ -10,6 +10,8 @@ import {
   REWARD_BONUS_CHANCE,
   HEAL_AMOUNT,
   MAX_SHIELD,
+  MAX_ROUNDS,
+  ROUNDS_TO_WIN,
 } from '../constants/game';
 import { usePromptSystem } from './usePromptSystem';
 
@@ -22,6 +24,10 @@ export function useGameState() {
   const [timeLeft, setTimeLeft] = useState(BATTLE_DURATION);
   const [stakeAmount, setStakeAmount] = useState('0.01');
   const [matchResult, setMatchResult] = useState(null);
+  const [roundResult, setRoundResult] = useState(null);
+  const [roundNumber, setRoundNumber] = useState(1);
+  const [playerRoundWins, setPlayerRoundWins] = useState(0);
+  const [opponentRoundWins, setOpponentRoundWins] = useState(0);
   const [resultCooldown, setResultCooldown] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [combo, setCombo] = useState(1);
@@ -34,6 +40,9 @@ export function useGameState() {
   const playerHealthRef = useRef(100);
   const opponentHealthRef = useRef(100);
   const playerShieldRef = useRef(0);
+  const roundNumberRef = useRef(1);
+  const playerRoundWinsRef = useRef(0);
+  const opponentRoundWinsRef = useRef(0);
   const battleTimerRef = useRef(null);
   const opponentAIRef = useRef(null);
 
@@ -98,12 +107,34 @@ export function useGameState() {
     else if (ph > oh)           result = 'win';
     else if (oh > ph)           result = 'lose';
     else                        result = 'draw';
-    setMatchResult(result);
-    setGameState('result');
+
+    setRoundResult(result);
+    if (result === 'win') {
+      playerRoundWinsRef.current += 1;
+      setPlayerRoundWins(playerRoundWinsRef.current);
+    } else if (result === 'lose') {
+      opponentRoundWinsRef.current += 1;
+      setOpponentRoundWins(opponentRoundWinsRef.current);
+    }
+
+    const pWins = playerRoundWinsRef.current;
+    const oWins = opponentRoundWinsRef.current;
+    const isMatchOver = pWins >= ROUNDS_TO_WIN || oWins >= ROUNDS_TO_WIN || roundNumberRef.current >= MAX_ROUNDS;
+
+    if (isMatchOver) {
+      let overall;
+      if (pWins > oWins)      overall = 'win';
+      else if (oWins > pWins) overall = 'lose';
+      else                    overall = 'draw';
+      setMatchResult(overall);
+      setGameState('result');
+    } else {
+      setGameState('roundResult');
+    }
     setResultCooldown(RESULT_COOLDOWN);
   }, [clearBattleTimers]);
 
-  const startMatch = useCallback(() => {
+  const startRound = useCallback(() => {
     clearBattleTimers();
     prompt.reset();
     setGameState('countdown');
@@ -114,6 +145,7 @@ export function useGameState() {
     setOpponentClicks(0);
     setTimeLeft(BATTLE_DURATION);
     setMatchResult(null);
+    setRoundResult(null);
     setCombo(1);
     comboRef.current = 1;
     battleEndedRef.current = false;
@@ -124,6 +156,22 @@ export function useGameState() {
     setRewardEvent(null);
     setShieldBlockEvent(null);
   }, [clearBattleTimers, prompt]);
+
+  const startMatch = useCallback(() => {
+    roundNumberRef.current = 1;
+    playerRoundWinsRef.current = 0;
+    opponentRoundWinsRef.current = 0;
+    setRoundNumber(1);
+    setPlayerRoundWins(0);
+    setOpponentRoundWins(0);
+    startRound();
+  }, [startRound]);
+
+  const startNextRound = useCallback(() => {
+    roundNumberRef.current += 1;
+    setRoundNumber(roundNumberRef.current);
+    startRound();
+  }, [startRound]);
 
   const handleAttack = useCallback(() => {
     if (gameState !== 'battle' || prompt.isStunnedRef.current) return;
@@ -213,7 +261,7 @@ export function useGameState() {
 
   // Result cooldown
   useEffect(() => {
-    if (gameState !== 'result' || resultCooldown <= 0) return;
+    if ((gameState !== 'result' && gameState !== 'roundResult') || resultCooldown <= 0) return;
     const t = setTimeout(() => setResultCooldown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [gameState, resultCooldown]);
@@ -228,6 +276,10 @@ export function useGameState() {
     stakeAmount,
     setStakeAmount,
     matchResult,
+    roundResult,
+    roundNumber,
+    playerRoundWins,
+    opponentRoundWins,
     resultCooldown,
     countdown,
     combo,
@@ -235,6 +287,7 @@ export function useGameState() {
     rewardEvent,
     shieldBlockEvent,
     startMatch,
+    startNextRound,
     handlePointerDown,
     handlePointerUp,
     prompt,

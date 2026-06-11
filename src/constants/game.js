@@ -19,6 +19,10 @@ export const BATTLE_DURATION = 45;
 export const RESULT_COOLDOWN = 5;
 export const OPPONENT_INTERVAL = 170;
 
+// Match format
+export const MAX_ROUNDS = 3;
+export const ROUNDS_TO_WIN = 2;
+
 // MASH: rapid-tap meter
 export const MASH_TARGET_TAPS = 6;
 export const MASH_WINDOW = 2200;
