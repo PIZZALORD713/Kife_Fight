@@ -1,25 +1,16 @@
 // src/App.jsx
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { WagmiProvider, useAccount } from 'wagmi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import '@rainbow-me/rainbowkit/styles.css';
-
-import { wagmiConfig } from './wagmi';
 import { GameWindow } from './components/GameWindow';
-import { ConnectScreen } from './components/screens/ConnectScreen';
+import { RoundIndicator } from './components/RoundIndicator';
 import { LobbyScreen } from './components/screens/LobbyScreen';
 import { CountdownScreen } from './components/screens/CountdownScreen';
 import { BattleScreen } from './components/screens/BattleScreen';
 import { ResultScreen } from './components/screens/ResultScreen';
+import { RoundResultScreen } from './components/screens/RoundResultScreen';
 import { useGameState } from './hooks/useGameState';
 
-const queryClient = new QueryClient();
-
-function Game() {
-  const { isConnected, address } = useAccount();
+export default function App() {
   const {
     gameState,
-    walletAddress,
     playerHealth,
     opponentHealth,
     playerClicks,
@@ -28,52 +19,91 @@ function Game() {
     stakeAmount,
     setStakeAmount,
     matchResult,
+    roundResult,
+    roundNumber,
+    playerRoundWins,
+    opponentRoundWins,
     resultCooldown,
     countdown,
+    combo,
+    playerShield,
+    rewardEvent,
+    shieldBlockEvent,
     startMatch,
+    startNextRound,
+    returnToLobby,
     handlePointerDown,
     handlePointerUp,
     prompt,
   } = useGameState();
 
-  const displayAddress = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
-    : walletAddress;
-
-  const effectiveGameState = isConnected && gameState === 'connect' ? 'lobby' : gameState;
-
   return (
-    <GameWindow>
-      {effectiveGameState === 'connect' && <ConnectScreen />}
-      {effectiveGameState === 'lobby' && (
+    <GameWindow
+      header={
+        gameState !== 'lobby' && (
+          <RoundIndicator
+            roundNumber={roundNumber}
+            playerRoundWins={playerRoundWins}
+            opponentRoundWins={opponentRoundWins}
+          />
+        )
+      }
+    >
+      {gameState === 'lobby' && (
         <LobbyScreen
-          walletAddress={displayAddress}
           stakeAmount={stakeAmount}
           setStakeAmount={setStakeAmount}
           onEnterArena={startMatch}
         />
       )}
-      {effectiveGameState === 'countdown' && (
-        <CountdownScreen countdown={countdown} stakeAmount={stakeAmount} />
+      {gameState === 'countdown' && (
+        <CountdownScreen
+          countdown={countdown}
+          stakeAmount={stakeAmount}
+          roundNumber={roundNumber}
+        />
       )}
-      {effectiveGameState === 'battle' && (
+      {gameState === 'battle' && (
         <BattleScreen
           playerHealth={playerHealth}
           opponentHealth={opponentHealth}
           playerClicks={playerClicks}
           opponentClicks={opponentClicks}
           timeLeft={timeLeft}
+          combo={combo}
+          playerShield={playerShield}
+          rewardEvent={rewardEvent}
+          shieldBlockEvent={shieldBlockEvent}
           promptPhase={prompt.promptPhase}
           promptType={prompt.promptType}
           promptResult={prompt.promptResult}
           holdProgress={prompt.holdProgress}
+          pauseProgress={prompt.pauseProgress}
+          mashCount={prompt.mashCount}
+          mashProgress={prompt.mashProgress}
+          timingPosition={prompt.timingPosition}
+          timingZone={prompt.timingZone}
           isStunned={prompt.isStunned}
           holdStartRef={prompt.holdStartRef}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
         />
       )}
-      {effectiveGameState === 'result' && (
+      {gameState === 'roundResult' && (
+        <RoundResultScreen
+          roundResult={roundResult}
+          roundNumber={roundNumber}
+          playerRoundWins={playerRoundWins}
+          opponentRoundWins={opponentRoundWins}
+          playerHealth={playerHealth}
+          opponentHealth={opponentHealth}
+          playerClicks={playerClicks}
+          opponentClicks={opponentClicks}
+          resultCooldown={resultCooldown}
+          onNextRound={startNextRound}
+        />
+      )}
+      {gameState === 'result' && (
         <ResultScreen
           matchResult={matchResult}
           stakeAmount={stakeAmount}
@@ -81,22 +111,12 @@ function Game() {
           opponentHealth={opponentHealth}
           playerClicks={playerClicks}
           opponentClicks={opponentClicks}
+          playerRoundWins={playerRoundWins}
+          opponentRoundWins={opponentRoundWins}
           resultCooldown={resultCooldown}
-          onRematch={startMatch}
+          onContinue={returnToLobby}
         />
       )}
     </GameWindow>
-  );
-}
-
-export default function App() {
-  return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <Game />
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
   );
 }

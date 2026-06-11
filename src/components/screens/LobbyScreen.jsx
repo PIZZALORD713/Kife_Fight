@@ -1,10 +1,10 @@
 // src/components/screens/LobbyScreen.jsx
-export function LobbyScreen({ walletAddress, stakeAmount, setStakeAmount, onEnterArena }) {
+export function LobbyScreen({ stakeAmount, setStakeAmount, onEnterArena }) {
   return (
     <div className="flex-1 flex flex-col p-5 gap-4">
       <div className="text-center">
-        <div className="text-green-400 text-xs font-mono tracking-widest">✓ CONNECTED</div>
-        <div className="text-gray-400 font-mono text-xs mt-0.5">{walletAddress}</div>
+        <div className="text-yellow-400 text-xs font-mono tracking-widest">🎮 PRACTICE MODE</div>
+        <div className="text-gray-400 font-mono text-xs mt-0.5">Stakes are simulated — crypto rails coming later</div>
       </div>
       <div className="flex-1 flex flex-col justify-center gap-4">
         <div>
@@ -19,6 +19,7 @@ export function LobbyScreen({ walletAddress, stakeAmount, setStakeAmount, onEnte
           />
         </div>
         <div className="bg-gray-700/50 rounded-xl p-4 text-sm text-gray-400 space-y-1.5">
+          <div className="flex justify-between"><span>Format</span><span className="text-white font-mono">Best of 3 rounds</span></div>
           <div className="flex justify-between"><span>Your stake</span><span className="text-white font-mono">{stakeAmount} ETH</span></div>
           <div className="flex justify-between"><span>Potential win</span><span className="text-green-400 font-mono">{(parseFloat(stakeAmount || 0) * 1.9).toFixed(3)} ETH</span></div>
           <div className="flex justify-between"><span>Protocol fee</span><span className="text-gray-500 font-mono">5%</span></div>
