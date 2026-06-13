@@ -1,16 +1,39 @@
-# React + Vite
+# Knife Fight
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time crypto PvP duel game. Two players stake on Base, winner takes the
+pot. Matches are short and repeatable. (See [`docs/PROJECT_BRIEF.md`](docs/PROJECT_BRIEF.md)
+for the full concept, status, and roadmap.)
 
-Currently, two official plugins are available:
+## 🎮 Play it
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Live (Practice Mode):** https://kife-fight.vercel.app
 
-## React Compiler
+> Currently single-player practice mode — the opponent is a local AI bot, and
+> stakes are simulated. Wallet connection, wagering, and PvP are on the
+> Weeks 2–4 roadmap.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech
 
-## Expanding the ESLint configuration
+Vite + React 19, Tailwind CSS. Runs in any browser, mobile-friendly.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the URL Vite prints (defaults to http://localhost:5173).
+
+## Other scripts
+
+```bash
+npm run build     # production build
+npm run preview   # preview the production build locally
+npm run lint      # eslint
+```
+
+## Deployment
+
+Hosted on Vercel at the link above. Pushes to the default branch deploy
+automatically via Vercel's Git integration.
