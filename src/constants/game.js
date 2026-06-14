@@ -16,4 +16,7 @@ export const COMBO_MAX = 4;
 export const PROMPT_SUCCESS_DAMAGE = 6;
 export const BATTLE_DURATION = 30;
 export const RESULT_COOLDOWN = 5;
+export const ROUND_RESULT_COOLDOWN = 3;
+export const ROUNDS_TO_WIN = 2;
+export const MAX_ROUNDS = 3;
 export const OPPONENT_INTERVAL = 170;

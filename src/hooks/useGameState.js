@@ -1,6 +1,15 @@
 // src/hooks/useGameState.js
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { BATTLE_DURATION, RESULT_COOLDOWN, OPPONENT_INTERVAL, COMBO_MAX, PROMPT_SUCCESS_DAMAGE } from '../constants/game';
+import {
+  BATTLE_DURATION,
+  RESULT_COOLDOWN,
+  ROUND_RESULT_COOLDOWN,
+  ROUNDS_TO_WIN,
+  MAX_ROUNDS,
+  OPPONENT_INTERVAL,
+  COMBO_MAX,
+  PROMPT_SUCCESS_DAMAGE,
+} from '../constants/game';
 import { usePromptSystem } from './usePromptSystem';
 
 export function useGameState() {
@@ -15,6 +24,10 @@ export function useGameState() {
   const [resultCooldown, setResultCooldown] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [combo, setCombo] = useState(1);
+  const [roundNumber, setRoundNumber] = useState(1);
+  const [playerRoundsWon, setPlayerRoundsWon] = useState(0);
+  const [opponentRoundsWon, setOpponentRoundsWon] = useState(0);
+  const [roundOutcome, setRoundOutcome] = useState(null);
 
   const comboRef = useRef(1);
   const battleEndedRef = useRef(false);
@@ -22,6 +35,9 @@ export function useGameState() {
   const opponentHealthRef = useRef(100);
   const battleTimerRef = useRef(null);
   const opponentAIRef = useRef(null);
+  const roundNumberRef = useRef(1);
+  const playerRoundsWonRef = useRef(0);
+  const opponentRoundsWonRef = useRef(0);
 
   const prompt = usePromptSystem({
     battleEndedRef,
@@ -54,18 +70,41 @@ export function useGameState() {
     clearBattleTimers();
     const ph = playerHealthRef.current;
     const oh = opponentHealthRef.current;
-    let result;
-    if (oh <= 0 && ph > 0)      result = 'win';
-    else if (ph <= 0 && oh > 0) result = 'lose';
-    else if (ph > oh)           result = 'win';
-    else if (oh > ph)           result = 'lose';
-    else                        result = 'draw';
-    setMatchResult(result);
-    setGameState('result');
-    setResultCooldown(RESULT_COOLDOWN);
+    let outcome;
+    if (oh <= 0 && ph > 0)      outcome = 'win';
+    else if (ph <= 0 && oh > 0) outcome = 'lose';
+    else if (ph > oh)           outcome = 'win';
+    else if (oh > ph)           outcome = 'lose';
+    else                        outcome = 'draw';
+
+    setRoundOutcome(outcome);
+
+    let pWins = playerRoundsWonRef.current;
+    let oWins = opponentRoundsWonRef.current;
+    if (outcome === 'win') pWins += 1;
+    else if (outcome === 'lose') oWins += 1;
+    playerRoundsWonRef.current = pWins;
+    opponentRoundsWonRef.current = oWins;
+    setPlayerRoundsWon(pWins);
+    setOpponentRoundsWon(oWins);
+
+    const matchOver = pWins >= ROUNDS_TO_WIN || oWins >= ROUNDS_TO_WIN || roundNumberRef.current >= MAX_ROUNDS;
+
+    if (matchOver) {
+      let final;
+      if (pWins > oWins)      final = 'win';
+      else if (oWins > pWins) final = 'lose';
+      else                    final = 'draw';
+      setMatchResult(final);
+      setGameState('result');
+      setResultCooldown(RESULT_COOLDOWN);
+    } else {
+      setGameState('roundResult');
+      setResultCooldown(ROUND_RESULT_COOLDOWN);
+    }
   }, [clearBattleTimers]);
 
-  const startMatch = useCallback(() => {
+  const beginRound = useCallback(() => {
     clearBattleTimers();
     prompt.reset();
     setGameState('countdown');
@@ -75,13 +114,32 @@ export function useGameState() {
     setPlayerClicks(0);
     setOpponentClicks(0);
     setTimeLeft(BATTLE_DURATION);
-    setMatchResult(null);
     setCombo(1);
     comboRef.current = 1;
     battleEndedRef.current = false;
     playerHealthRef.current = 100;
     opponentHealthRef.current = 100;
   }, [clearBattleTimers, prompt]);
+
+  const startMatch = useCallback(() => {
+    setRoundNumber(1);
+    roundNumberRef.current = 1;
+    setPlayerRoundsWon(0);
+    setOpponentRoundsWon(0);
+    playerRoundsWonRef.current = 0;
+    opponentRoundsWonRef.current = 0;
+    setMatchResult(null);
+    setRoundOutcome(null);
+    beginRound();
+  }, [beginRound]);
+
+  const startNextRound = useCallback(() => {
+    const next = roundNumberRef.current + 1;
+    roundNumberRef.current = next;
+    setRoundNumber(next);
+    setRoundOutcome(null);
+    beginRound();
+  }, [beginRound]);
 
   const handleAttack = useCallback(() => {
     if (gameState !== 'battle' || prompt.isStunnedRef.current) return;
@@ -170,6 +228,17 @@ export function useGameState() {
     return () => clearTimeout(t);
   }, [gameState, resultCooldown]);
 
+  // Round result cooldown -> auto-advance to next round
+  useEffect(() => {
+    if (gameState !== 'roundResult') return;
+    if (resultCooldown <= 0) {
+      startNextRound();
+      return;
+    }
+    const t = setTimeout(() => setResultCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [gameState, resultCooldown, startNextRound]);
+
   return {
     gameState,
     playerHealth,
@@ -183,6 +252,10 @@ export function useGameState() {
     resultCooldown,
     countdown,
     combo,
+    roundNumber,
+    playerRoundsWon,
+    opponentRoundsWon,
+    roundOutcome,
     startMatch,
     handlePointerDown,
     handlePointerUp,

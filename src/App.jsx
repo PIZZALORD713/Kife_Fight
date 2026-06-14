@@ -3,6 +3,7 @@ import { GameWindow } from './components/GameWindow';
 import { LobbyScreen } from './components/screens/LobbyScreen';
 import { CountdownScreen } from './components/screens/CountdownScreen';
 import { BattleScreen } from './components/screens/BattleScreen';
+import { RoundResultScreen } from './components/screens/RoundResultScreen';
 import { ResultScreen } from './components/screens/ResultScreen';
 import { useGameState } from './hooks/useGameState';
 
@@ -20,6 +21,10 @@ export default function App() {
     resultCooldown,
     countdown,
     combo,
+    roundNumber,
+    playerRoundsWon,
+    opponentRoundsWon,
+    roundOutcome,
     startMatch,
     handlePointerDown,
     handlePointerUp,
@@ -36,7 +41,7 @@ export default function App() {
         />
       )}
       {gameState === 'countdown' && (
-        <CountdownScreen countdown={countdown} stakeAmount={stakeAmount} />
+        <CountdownScreen countdown={countdown} stakeAmount={stakeAmount} roundNumber={roundNumber} />
       )}
       {gameState === 'battle' && (
         <BattleScreen
@@ -46,6 +51,9 @@ export default function App() {
           opponentClicks={opponentClicks}
           timeLeft={timeLeft}
           combo={combo}
+          roundNumber={roundNumber}
+          playerRoundsWon={playerRoundsWon}
+          opponentRoundsWon={opponentRoundsWon}
           promptPhase={prompt.promptPhase}
           promptType={prompt.promptType}
           promptResult={prompt.promptResult}
@@ -56,6 +64,15 @@ export default function App() {
           onPointerUp={handlePointerUp}
         />
       )}
+      {gameState === 'roundResult' && (
+        <RoundResultScreen
+          roundOutcome={roundOutcome}
+          roundNumber={roundNumber}
+          playerRoundsWon={playerRoundsWon}
+          opponentRoundsWon={opponentRoundsWon}
+          resultCooldown={resultCooldown}
+        />
+      )}
       {gameState === 'result' && (
         <ResultScreen
           matchResult={matchResult}
@@ -64,6 +81,8 @@ export default function App() {
           opponentHealth={opponentHealth}
           playerClicks={playerClicks}
           opponentClicks={opponentClicks}
+          playerRoundsWon={playerRoundsWon}
+          opponentRoundsWon={opponentRoundsWon}
           resultCooldown={resultCooldown}
           onRematch={startMatch}
         />

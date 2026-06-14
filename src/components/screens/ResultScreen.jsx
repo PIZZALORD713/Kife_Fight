@@ -1,5 +1,5 @@
 // src/components/screens/ResultScreen.jsx
-export function ResultScreen({ matchResult, stakeAmount, playerHealth, opponentHealth, playerClicks, opponentClicks, resultCooldown, onRematch }) {
+export function ResultScreen({ matchResult, stakeAmount, playerHealth, opponentHealth, playerClicks, opponentClicks, playerRoundsWon, opponentRoundsWon, resultCooldown, onRematch }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
       <div
@@ -20,6 +20,9 @@ export function ResultScreen({ matchResult, stakeAmount, playerHealth, opponentH
           {matchResult === 'win'  && `You won ${(parseFloat(stakeAmount) * 1.9).toFixed(3)} ETH`}
           {matchResult === 'lose' && `You lost ${stakeAmount} ETH`}
           {matchResult === 'draw' && 'Stakes returned'}
+        </p>
+        <p className="text-gray-500 text-xs mt-1 font-mono">
+          Match score: {playerRoundsWon} - {opponentRoundsWon}
         </p>
       </div>
 

@@ -10,6 +10,9 @@ export function BattleScreen({
   opponentClicks,
   timeLeft,
   combo,
+  roundNumber,
+  playerRoundsWon,
+  opponentRoundsWon,
   promptPhase,
   promptType,
   promptResult,
@@ -21,6 +24,11 @@ export function BattleScreen({
 }) {
   return (
     <div className="flex-1 flex flex-col p-4 gap-2 min-h-0">
+      <div className="flex items-center justify-center gap-2 shrink-0 text-xs font-mono text-gray-400">
+        <span className="uppercase tracking-widest">Round {roundNumber}/3</span>
+        <span className="text-white font-black">{playerRoundsWon} - {opponentRoundsWon}</span>
+      </div>
+
       <div className="flex gap-3 items-start shrink-0">
         <HealthBar label="YOU" health={playerHealth} />
         <div className="flex flex-col items-center pt-4 shrink-0">
