@@ -1,21 +1,24 @@
 // src/hooks/useFightChoreography.js
 //
-// The choreography director. It is a PURE CONSUMER of the gameplay state that
-// useGameState already produces — it never calls back into the engine, so the
-// fight logic stays untouched ("lane as visualization"). It turns prop
-// transitions (a landed prompt, a whiff, a block, a KO) into paired sprite
-// beats, and derives the tug-of-war lane position from the HP gap.
+// The choreography director. A PURE CONSUMER of the gameplay state useGameState
+// produces — it never calls back into the engine. It turns each outcome (a
+// landed attack, a raised shield, a heal, a whiff, a block, a KO) into a
+// branching multi-beat sequence chosen by the lane state, and derives the
+// tug-of-war position from the HP gap.
 import { useEffect, useRef, useState } from 'react';
 import {
-  BEATS,
   CLIPS,
   healthToMomentum,
   momentumToLane,
   laneToTone,
+  selectSequence,
+  scaleFx,
 } from '../constants/choreography';
 
 let _nonce = 0;
 const nextNonce = () => ++_nonce;
+
+const REWARD_KIND = { damage: 'attack', shield: 'shield', heal: 'heal' };
 
 export function useFightChoreography({
   playerHealth = 100,
@@ -24,88 +27,89 @@ export function useFightChoreography({
   shieldBlockEvent = null,
   promptResult = null,
 }) {
-  // Derived lane position — the emotional scoreboard.
   const momentum = healthToMomentum(playerHealth, opponentHealth);
   const lane = momentumToLane(momentum);
   const tone = laneToTone(lane);
 
   const [playerClip, setPlayerClip] = useState(CLIPS.IDLE);
   const [opponentClip, setOpponentClip] = useState(CLIPS.IDLE);
-  const [clipNonce, setClipNonce] = useState(0); // bump = restart the clip anim
+  const [clipNonce, setClipNonce] = useState(0);
   const [fx, setFx] = useState({ nonce: 0, shake: 'S', rgb: 0, finisher: false });
 
-  const idleTimer = useRef(null);
-  const contactTimer = useRef(null);
-  // Remembers the last event we already dramatized, so each one fires once.
+  const timers = useRef([]);
   const seen = useRef({ reward: null, block: null, prompt: null, koP: false, koO: false });
 
-  const fireBeat = (beat) => {
-    clearTimeout(idleTimer.current);
-    clearTimeout(contactTimer.current);
-    setPlayerClip(beat.player);
-    setOpponentClip(beat.opponent);
-    setClipNonce(nextNonce());
-
-    // FX fires on the contact frame so the hit, shake and glitch land together.
-    contactTimer.current = setTimeout(() => {
-      setFx({
-        nonce: nextNonce(),
-        shake: beat.fx.shake,
-        rgb: beat.fx.rgb,
-        finisher: !!beat.fx.finisher,
-      });
-    }, beat.contact);
-
-    // Return to neutral after the beat (a finisher holds its pose).
-    if (!beat.fx.finisher) {
-      idleTimer.current = setTimeout(() => {
-        setPlayerClip(CLIPS.IDLE);
-        setOpponentClip(CLIPS.IDLE);
-        setClipNonce(nextNonce());
-      }, beat.duration);
-    }
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
+  const later = (fn, ms) => {
+    const id = setTimeout(fn, ms);
+    timers.current.push(id);
   };
 
-  // Player lands a prompt hit → lunge / opponent stumbles.
+  // Play a sequence of beats in order; FX lands on each beat's contact frame.
+  const fireSequence = (seq, power = 'good') => {
+    clearTimers();
+    let i = 0;
+    const playStep = () => {
+      const s = seq[i];
+      setPlayerClip(s.player);
+      setOpponentClip(s.opponent);
+      setClipNonce(nextNonce());
+      const f = scaleFx(s.fx, power);
+      if (f) later(() => setFx({ nonce: nextNonce(), shake: f.shake, rgb: f.rgb, finisher: !!f.finisher }), s.contact ?? 0);
+      i += 1;
+      if (i < seq.length) {
+        later(playStep, s.dur);
+      } else if (!s.fx?.finisher) {
+        later(() => {
+          setPlayerClip(CLIPS.IDLE);
+          setOpponentClip(CLIPS.IDLE);
+          setClipNonce(nextNonce());
+        }, s.dur);
+      }
+    };
+    playStep();
+  };
+
+  // Landed skill check → attack combo / shield brace / heal recover, branched.
   useEffect(() => {
     if (!rewardEvent || rewardEvent.id === seen.current.reward) return;
     seen.current.reward = rewardEvent.id;
-    fireBeat(rewardEvent.tier === 'perfect' ? BEATS.PLAYER_PERFECT : BEATS.PLAYER_WIN);
-  }, [rewardEvent]);
+    const kind = REWARD_KIND[rewardEvent.reward] || 'attack';
+    fireSequence(selectSequence(kind, momentum), rewardEvent.tier);
+  }, [rewardEvent]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Player whiffs a prompt → stun / opponent presses.
+  // Whiffed check → stun, branched (cornered fighters eat a bigger punish).
   useEffect(() => {
-    if (promptResult === 'fail' && seen.current.prompt !== 'fail') fireBeat(BEATS.PLAYER_FAIL);
+    if (promptResult === 'fail' && seen.current.prompt !== 'fail') {
+      fireSequence(selectSequence('fail', momentum));
+    }
     seen.current.prompt = promptResult;
-  }, [promptResult]);
+  }, [promptResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Player shield blocks an incoming hit → brace.
+  // Shield soaks an incoming hit → brace.
   useEffect(() => {
     if (shieldBlockEvent && shieldBlockEvent !== seen.current.block) {
       seen.current.block = shieldBlockEvent;
-      fireBeat(BEATS.PLAYER_BLOCK);
+      fireSequence(selectSequence('block', momentum));
     }
-  }, [shieldBlockEvent]);
+  }, [shieldBlockEvent]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Knockout → finisher pose + glitch tear, staged wherever the lane ended.
+  // Knockout → finisher sequence, staged where the lane ended.
   useEffect(() => {
     if (opponentHealth <= 0 && !seen.current.koO) {
       seen.current.koO = true;
-      fireBeat(BEATS.KO_WIN);
+      fireSequence(selectSequence('ko-win', momentum));
     }
     if (playerHealth <= 0 && !seen.current.koP) {
       seen.current.koP = true;
-      fireBeat(BEATS.KO_LOSE);
+      fireSequence(selectSequence('ko-lose', momentum));
     }
-  }, [playerHealth, opponentHealth]);
+  }, [playerHealth, opponentHealth]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(
-    () => () => {
-      clearTimeout(idleTimer.current);
-      clearTimeout(contactTimer.current);
-    },
-    []
-  );
+  useEffect(() => () => clearTimers(), []);
 
   return { momentum, lane, tone, playerClip, opponentClip, clipNonce, fx };
 }

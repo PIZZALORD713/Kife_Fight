@@ -1,14 +1,11 @@
 // src/hooks/usePromptSystem.js
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  PROMPT_TYPES,
+  PROMPT_ROLE,
   TELEGRAPH_MIN,
   TELEGRAPH_MAX,
   HOLD_DURATION,
   PAUSE_DURATION,
-  DOUBLE_MIN_GAP,
-  DOUBLE_MAX_GAP,
-  DOUBLE_TIMEOUT,
   STUN_DURATION,
   STAGGER_DURATION,
   PROMPT_SPAWN_MIN,
@@ -19,9 +16,15 @@ import {
   TIMING_PERIOD,
   TIMING_TIMEOUT,
   TIMING_UPDATE_INTERVAL,
+  CHARGE_FILL_DURATION,
+  CHARGE_ZONE_WIDTH,
+  CHARGE_PERFECT_RATIO,
+  CHARGE_TIMEOUT,
+  CHARGE_UPDATE_INTERVAL,
+  pickPromptType,
 } from '../constants/game';
 
-export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
+export function usePromptSystem({ battleEndedRef, playerHealthRef, opponentHealthRef, onSuccess, onFail }) {
   const onSuccessRef = useRef(onSuccess);
   const onFailRef = useRef(onFail);
   useEffect(() => {
@@ -37,6 +40,8 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
   const [mashProgress, setMashProgress] = useState(0);
   const [timingPosition, setTimingPosition] = useState(0);
   const [timingZone, setTimingZone] = useState(null);
+  const [chargeProgress, setChargeProgress] = useState(0);
+  const [chargeZone, setChargeZone] = useState(null);
   const [isStunned, setIsStunned] = useState(false);
   const [opponentStaggered, setOpponentStaggered] = useState(false);
 
@@ -44,18 +49,21 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
   const promptTypeRef = useRef(null);
   const isStunnedRef = useRef(false);
   const opponentStaggeredRef = useRef(false);
-  const lastTapRef = useRef(0);
   const holdStartRef = useRef(null);
   const mashCountRef = useRef(0);
   const mashStartRef = useRef(null);
   const timingStartRef = useRef(null);
   const timingZoneRef = useRef(null);
   const timingPositionRef = useRef(0);
+  const chargeStartRef = useRef(null);
+  const chargeProgressRef = useRef(0);
+  const chargeZoneRef = useRef(null);
 
   const promptSpawnRef = useRef(null);
   const promptTimeoutRef = useRef(null);
   const holdIntervalRef = useRef(null);
   const timingIntervalRef = useRef(null);
+  const chargeIntervalRef = useRef(null);
   const stunTimeoutRef = useRef(null);
 
   const syncPromptPhase = (v) => { promptPhaseRef.current = v; setPromptPhase(v); };
@@ -63,13 +71,18 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
   const syncIsStunned = (v) => { isStunnedRef.current = v; setIsStunned(v); };
   const syncOpponentStaggered = (v) => { opponentStaggeredRef.current = v; setOpponentStaggered(v); };
 
+  const clearActiveIntervals = useCallback(() => {
+    clearInterval(holdIntervalRef.current);
+    clearInterval(timingIntervalRef.current);
+    clearInterval(chargeIntervalRef.current);
+  }, []);
+
   const clearPromptTimers = useCallback(() => {
     clearTimeout(promptSpawnRef.current);
     clearTimeout(promptTimeoutRef.current);
-    clearInterval(holdIntervalRef.current);
-    clearInterval(timingIntervalRef.current);
     clearTimeout(stunTimeoutRef.current);
-  }, []);
+    clearActiveIntervals();
+  }, [clearActiveIntervals]);
 
   const reset = useCallback(() => {
     clearPromptTimers();
@@ -82,15 +95,19 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
     setMashProgress(0);
     setTimingPosition(0);
     setTimingZone(null);
+    setChargeProgress(0);
+    setChargeZone(null);
     syncIsStunned(false);
     syncOpponentStaggered(false);
-    lastTapRef.current = 0;
     holdStartRef.current = null;
     mashCountRef.current = 0;
     mashStartRef.current = null;
     timingStartRef.current = null;
     timingZoneRef.current = null;
     timingPositionRef.current = 0;
+    chargeStartRef.current = null;
+    chargeProgressRef.current = 0;
+    chargeZoneRef.current = null;
   }, [clearPromptTimers]);
 
   const scheduleNextPrompt = useCallback(() => {
@@ -105,42 +122,46 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const completePrompt = useCallback((tier = 'good') => {
-    clearTimeout(promptTimeoutRef.current);
-    clearInterval(holdIntervalRef.current);
-    clearInterval(timingIntervalRef.current);
-    syncPromptPhase(null);
-    syncPromptType(null);
+  const resetActiveState = () => {
     setHoldProgress(0);
     setPauseProgress(0);
     setMashProgress(0);
     setMashCount(0);
     setTimingZone(null);
+    setChargeProgress(0);
+    setChargeZone(null);
     holdStartRef.current = null;
     mashCountRef.current = 0;
     timingZoneRef.current = null;
+    chargeStartRef.current = null;
+    chargeProgressRef.current = 0;
+    chargeZoneRef.current = null;
+  };
+
+  const completePrompt = useCallback((tier = 'good') => {
+    const completedType = promptTypeRef.current;
+    clearTimeout(promptTimeoutRef.current);
+    clearActiveIntervals();
+    syncPromptPhase(null);
+    syncPromptType(null);
+    resetActiveState();
     setPromptResult('success');
-    onSuccessRef.current?.(tier);
-    syncOpponentStaggered(true);
-    setTimeout(() => syncOpponentStaggered(false), STAGGER_DURATION);
+    onSuccessRef.current?.(tier, completedType);
+    // Only a landed attack rocks the opponent; defensive checks don't.
+    if (PROMPT_ROLE[completedType] === 'attack') {
+      syncOpponentStaggered(true);
+      setTimeout(() => syncOpponentStaggered(false), STAGGER_DURATION);
+    }
     setTimeout(() => setPromptResult(null), 700);
     scheduleNextPrompt();
-  }, [scheduleNextPrompt]);
+  }, [clearActiveIntervals, scheduleNextPrompt]);
 
   const failPrompt = useCallback(() => {
     clearTimeout(promptTimeoutRef.current);
-    clearInterval(holdIntervalRef.current);
-    clearInterval(timingIntervalRef.current);
+    clearActiveIntervals();
     syncPromptPhase(null);
     syncPromptType(null);
-    setHoldProgress(0);
-    setPauseProgress(0);
-    setMashProgress(0);
-    setMashCount(0);
-    setTimingZone(null);
-    holdStartRef.current = null;
-    mashCountRef.current = 0;
-    timingZoneRef.current = null;
+    resetActiveState();
     setPromptResult('fail');
     onFailRef.current?.();
     syncIsStunned(true);
@@ -149,15 +170,16 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
       setPromptResult(null);
       scheduleNextPrompt();
     }, STUN_DURATION);
-  }, [scheduleNextPrompt]);
+  }, [clearActiveIntervals, scheduleNextPrompt]);
 
   const spawnPrompt = useCallback(() => {
-    const type = PROMPT_TYPES[Math.floor(Math.random() * PROMPT_TYPES.length)];
+    const advantage = ((playerHealthRef?.current ?? 100) - (opponentHealthRef?.current ?? 100)) / 100;
+    const type = pickPromptType(advantage);
     syncPromptType(type);
     syncPromptPhase('telegraph');
     setPromptResult(null);
-    lastTapRef.current = 0;
     holdStartRef.current = null;
+    chargeStartRef.current = null;
 
     const telegraphDuration = TELEGRAPH_MIN + Math.random() * (TELEGRAPH_MAX - TELEGRAPH_MIN);
 
@@ -195,12 +217,6 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
             failPrompt();
           }
         }, HOLD_DURATION + 2000);
-      } else if (type === 'DOUBLE') {
-        promptTimeoutRef.current = setTimeout(() => {
-          if (promptPhaseRef.current === 'active' && promptTypeRef.current === 'DOUBLE') {
-            failPrompt();
-          }
-        }, DOUBLE_TIMEOUT);
       } else if (type === 'MASH') {
         mashCountRef.current = 0;
         setMashCount(0);
@@ -236,42 +252,76 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
             failPrompt();
           }
         }, TIMING_TIMEOUT);
+      } else if (type === 'CHARGE') {
+        const greenStart = 42 + Math.random() * 24;
+        const greenEnd = greenStart + CHARGE_ZONE_WIDTH;
+        const perfectWidth = CHARGE_ZONE_WIDTH * CHARGE_PERFECT_RATIO;
+        const perfectStart = greenStart + (CHARGE_ZONE_WIDTH - perfectWidth) / 2;
+        const perfectEnd = perfectStart + perfectWidth;
+        const zone = { greenStart, greenEnd, perfectStart, perfectEnd };
+        chargeZoneRef.current = zone;
+        setChargeZone(zone);
+        chargeStartRef.current = null;
+        chargeProgressRef.current = 0;
+        setChargeProgress(0);
+        chargeIntervalRef.current = setInterval(() => {
+          if (!chargeStartRef.current) return;
+          const elapsed = Date.now() - chargeStartRef.current;
+          const pct = Math.min(100, (elapsed / CHARGE_FILL_DURATION) * 100);
+          chargeProgressRef.current = pct;
+          setChargeProgress(pct);
+          if (pct >= 100) {
+            clearInterval(chargeIntervalRef.current);
+            failPrompt(); // overcharged — released too late
+          }
+        }, CHARGE_UPDATE_INTERVAL);
+        promptTimeoutRef.current = setTimeout(() => {
+          if (promptPhaseRef.current === 'active' && promptTypeRef.current === 'CHARGE') {
+            failPrompt();
+          }
+        }, CHARGE_TIMEOUT);
       }
     }, telegraphDuration);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completePrompt, failPrompt]);
 
   const handlePointerDown = useCallback(() => {
-    if (promptPhaseRef.current === 'active' && promptTypeRef.current === 'HOLD') {
+    if (promptPhaseRef.current !== 'active') return false;
+    if (promptTypeRef.current === 'HOLD') {
       holdStartRef.current = Date.now();
+      return true;
+    }
+    if (promptTypeRef.current === 'CHARGE') {
+      if (chargeStartRef.current === null) chargeStartRef.current = Date.now();
       return true;
     }
     return false;
   }, []);
 
   const handlePointerUp = useCallback(() => {
-    if (promptPhaseRef.current === 'active' && promptTypeRef.current === 'HOLD') {
+    if (promptPhaseRef.current !== 'active') return;
+    if (promptTypeRef.current === 'HOLD') {
       if (holdStartRef.current !== null) {
         const held = Date.now() - holdStartRef.current;
         if (held < HOLD_DURATION) failPrompt();
         holdStartRef.current = null;
       }
+    } else if (promptTypeRef.current === 'CHARGE') {
+      if (chargeStartRef.current !== null) {
+        const pct = chargeProgressRef.current;
+        const zone = chargeZoneRef.current;
+        chargeStartRef.current = null;
+        if (zone && pct >= zone.perfectStart && pct <= zone.perfectEnd) completePrompt('perfect');
+        else if (zone && pct >= zone.greenStart && pct <= zone.greenEnd) completePrompt('good');
+        else failPrompt();
+      }
     }
-  }, [failPrompt]);
+  }, [failPrompt, completePrompt]);
 
   const handleAttackDuringPrompt = useCallback(() => {
     const type = promptTypeRef.current;
     if (type === 'PAUSE') { failPrompt(); return 'blocked'; }
-    if (type === 'HOLD') return 'blocked';
-    if (type === 'DOUBLE') {
-      const now = Date.now();
-      const prev = lastTapRef.current;
-      lastTapRef.current = now;
-      if (prev > 0) {
-        const gap = now - prev;
-        if (gap >= DOUBLE_MIN_GAP && gap <= DOUBLE_MAX_GAP) completePrompt();
-      }
-      return 'blocked';
-    }
+    if (type === 'HOLD' || type === 'CHARGE') return 'blocked';
     if (type === 'MASH') {
       mashCountRef.current += 1;
       const count = mashCountRef.current;
@@ -306,11 +356,12 @@ export function usePromptSystem({ battleEndedRef, onSuccess, onFail }) {
     mashProgress,
     timingPosition,
     timingZone,
+    chargeProgress,
+    chargeZone,
     isStunned,
     isStunnedRef,
     opponentStaggered,
     opponentStaggeredRef,
-    lastTapRef,
     holdStartRef,
     scheduleNextPrompt,
     clearPromptTimers,

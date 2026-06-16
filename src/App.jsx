@@ -76,6 +76,8 @@ export default function App() {
           mashProgress={prompt.mashProgress}
           timingPosition={prompt.timingPosition}
           timingZone={prompt.timingZone}
+          chargeProgress={prompt.chargeProgress}
+          chargeZone={prompt.chargeZone}
           isStunned={prompt.isStunned}
           holdStartRef={prompt.holdStartRef}
           onPointerDown={handlePointerDown}

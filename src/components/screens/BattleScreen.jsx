@@ -4,6 +4,7 @@ import { PromptBanner } from '../PromptBanner';
 import { AttackButton } from '../AttackButton';
 import { TimingMeter } from '../TimingMeter';
 import { MashMeter } from '../MashMeter';
+import { ChargeMeter } from '../ChargeMeter';
 import { RewardPopup } from '../RewardPopup';
 import { RoundIndicator } from '../RoundIndicator';
 import { FightStage } from '../fight/FightStage';
@@ -30,6 +31,8 @@ export function BattleScreen({
   mashProgress,
   timingPosition,
   timingZone,
+  chargeProgress,
+  chargeZone,
   isStunned,
   holdStartRef,
   onPointerDown,
@@ -96,6 +99,9 @@ export function BattleScreen({
         {promptPhase === 'active' && promptType === 'TIMING' && (
           <TimingMeter position={timingPosition} zone={timingZone} />
         )}
+        {promptPhase === 'active' && promptType === 'CHARGE' && (
+          <ChargeMeter progress={chargeProgress} zone={chargeZone} />
+        )}
       </div>
 
       <PromptBanner
@@ -119,6 +125,7 @@ export function BattleScreen({
         promptPhase={promptPhase}
         promptType={promptType}
         isHolding={holdStartRef?.current !== null}
+        isCharging={chargeProgress > 0}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}

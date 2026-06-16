@@ -7,8 +7,9 @@ import {
   COMBO_MAX,
   PROMPT_SUCCESS_DAMAGE,
   PROMPT_PERFECT_DAMAGE,
-  REWARD_BONUS_CHANCE,
+  PROMPT_ROLE,
   HEAL_AMOUNT,
+  CHARGE_PERFECT_HEAL,
   MAX_SHIELD,
   MAX_ROUNDS,
   ROUNDS_TO_WIN,
@@ -48,40 +49,52 @@ export function useGameState() {
 
   const prompt = usePromptSystem({
     battleEndedRef,
-    onSuccess: (tier) => {
-      const damage = tier === 'perfect' ? PROMPT_PERFECT_DAMAGE : PROMPT_SUCCESS_DAMAGE;
-      setOpponentHealth(h => {
-        const next = Math.max(0, h - damage);
-        opponentHealthRef.current = next;
-        if (next <= 0 && !battleEndedRef.current) endBattle();
-        return next;
-      });
-      const next = Math.min(COMBO_MAX, comboRef.current + 1);
-      comboRef.current = next;
-      setCombo(next);
+    playerHealthRef,
+    opponentHealthRef,
+    onSuccess: (tier, type) => {
+      const role = PROMPT_ROLE[type] || 'attack';
 
-      let reward = 'damage';
-      if (tier === 'perfect') {
-        reward = Math.random() < 0.5 ? 'shield' : 'heal';
-      } else if (Math.random() < REWARD_BONUS_CHANCE) {
-        reward = Math.random() < 0.5 ? 'shield' : 'heal';
+      // Offensive check → damage + combo.
+      if (role === 'attack') {
+        const damage = tier === 'perfect' ? PROMPT_PERFECT_DAMAGE : PROMPT_SUCCESS_DAMAGE;
+        setOpponentHealth(h => {
+          const next = Math.max(0, h - damage);
+          opponentHealthRef.current = next;
+          if (next <= 0 && !battleEndedRef.current) endBattle();
+          return next;
+        });
+        const combo = Math.min(COMBO_MAX, comboRef.current + 1);
+        comboRef.current = combo;
+        setCombo(combo);
+        setRewardEvent({ id: Date.now() + Math.random(), tier, reward: 'damage', damage });
+        return;
       }
 
-      if (reward === 'shield') {
+      // Defensive CHARGE → raise a shield (perfect also chips back some HP).
+      if (role === 'shield') {
         setPlayerShield(s => {
           const shielded = Math.min(MAX_SHIELD, s + 1);
           playerShieldRef.current = shielded;
           return shielded;
         });
-      } else if (reward === 'heal') {
-        setPlayerHealth(h => {
-          const healed = Math.min(100, h + HEAL_AMOUNT);
-          playerHealthRef.current = healed;
-          return healed;
-        });
+        if (tier === 'perfect') {
+          setPlayerHealth(h => {
+            const healed = Math.min(100, h + CHARGE_PERFECT_HEAL);
+            playerHealthRef.current = healed;
+            return healed;
+          });
+        }
+        setRewardEvent({ id: Date.now() + Math.random(), tier, reward: 'shield' });
+        return;
       }
 
-      setRewardEvent({ id: Date.now() + Math.random(), tier, reward, damage });
+      // Defensive PAUSE → catch your breath and recover HP.
+      setPlayerHealth(h => {
+        const healed = Math.min(100, h + HEAL_AMOUNT);
+        playerHealthRef.current = healed;
+        return healed;
+      });
+      setRewardEvent({ id: Date.now() + Math.random(), tier, reward: 'heal', amount: HEAL_AMOUNT });
     },
     onFail: () => {
       comboRef.current = 1;
