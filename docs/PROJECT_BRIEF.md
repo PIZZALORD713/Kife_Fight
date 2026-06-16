@@ -1,6 +1,7 @@
 # Knife Fight MVP — Project Brief v2 (Revised)
 
-**Revision date:** June 12, 2026 (end of Week 1 of the 4-week MVP timeline)
+**Revision date:** June 12, 2026 (end of Week 1 of the 4-week MVP timeline) ·
+gameplay description refreshed June 16, 2026
 **Supersedes:** Original pitch brief (pre-development)
 **Repo:** `pizzalord713/kife_fight`
 **Live (Practice Mode):** https://kife-fight.vercel.app
@@ -33,13 +34,30 @@ contract, no second player**.
 
 ### Unplanned work that shipped (and is mostly a good thing)
 
-Three PRs deepened gameplay well beyond the brief's "one button, health bars" spec:
+Several PRs deepened gameplay well beyond the brief's "one button, health bars" spec:
 
-- **Prompt mini-game system** — five interrupt types (HOLD, DOUBLE-tap, PAUSE,
-  MASH, TIMING-bar) that telegraph and demand a skill response. Success deals
-  crit damage; perfect timing deals more.
-- **Combo multiplier** (up to 4×), **shields**, **heals**, reward popups.
+- **Prompt mini-game system** — five telegraphed skill checks, split by
+  **role**. Offensive checks deal damage and build combo: MASH (rapid taps),
+  TIMING (tap a moving sweet-spot), HOLD (hold to full). Defensive checks are
+  the comeback tools: CHARGE (hold to fill a power bar, release in the green
+  zone) raises a **shield**; PAUSE (hold still) is a **heal**. Perfect
+  execution pays out more — extra crit damage, or a little HP back on a perfect
+  shield. *(This replaced an earlier DOUBLE-tap check that a button-masher
+  could clear by accident; the new CHARGE check actively punishes mashing.)*
+- **Adaptive "comeback" difficulty** — the engine weights *which* check it
+  hands you by the live health gap: a losing player sees more shield/heal
+  checks, a leader sees more aggressive ones (weights are floored so any check
+  can still appear). Combos cap at 4×; reward popups annotate each outcome.
 - **Best-of-3 round format** (45s rounds, first to 2 round wins).
+- **Procedural fight choreography (placeholder visuals)** — a presentation
+  layer that *dramatizes* the gameplay without changing it: silhouette fighters
+  trade branched, multi-beat scripted sequences that escalate with the score (a
+  dominant player lands a punishing combo; a cornered one scraps for a single
+  counter), a momentum/"lane" meter tracks who's pressing, and hits land with
+  screen-shake / RGB-glitch FX. The fighters are placeholder silhouettes behind
+  a defined sprite-pack contract, so real character art can drop in later. As a
+  pure consumer of game state it stays a client-side renderer when the
+  server becomes authoritative (Week 2).
 
 The prompt system is genuinely strategic: the original brief flagged
 **botting** as the #1 risk of a pure click-speed game, and these
