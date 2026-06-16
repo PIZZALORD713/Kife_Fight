@@ -27,3 +27,67 @@ body {
 .animate-float-up-fade {
   animation: float-up-fade 1.3s ease-out forwards;
 }
+
+/* ── Fight choreography: fighter clips ──────────────────── */
+/* --face: +1 faces right, -1 faces left, so one keyframe serves both fighters. */
+@keyframes fighter-idle {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50%      { transform: translateY(-2px) scaleY(1.015); }
+}
+@keyframes fighter-lunge {
+  0%   { transform: translateX(0) scale(1, 1); }
+  35%  { transform: translateX(calc(var(--face, 1) * 26px)) scale(1.06, 0.95); }
+  55%  { transform: translateX(calc(var(--face, 1) * 18px)) scale(1.02, 1); }
+  100% { transform: translateX(0) scale(1, 1); }
+}
+@keyframes fighter-strike {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  40%      { transform: translateX(calc(var(--face, 1) * 12px)) rotate(calc(var(--face, 1) * -3deg)); }
+}
+@keyframes fighter-stumble {
+  0%   { transform: translateX(0) rotate(0); }
+  30%  { transform: translateX(calc(var(--face, 1) * -24px)) rotate(calc(var(--face, 1) * -9deg)); }
+  60%  { transform: translateX(calc(var(--face, 1) * -14px)) rotate(calc(var(--face, 1) * -4deg)); }
+  100% { transform: translateX(0) rotate(0); }
+}
+@keyframes fighter-stun {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(calc(var(--face, 1) * -6px)) rotate(-4deg); }
+  40% { transform: translateX(calc(var(--face, 1) *  5px)) rotate(3deg); }
+  60% { transform: translateX(calc(var(--face, 1) * -4px)) rotate(-3deg); }
+  80% { transform: translateX(calc(var(--face, 1) *  3px)) rotate(2deg); }
+}
+@keyframes fighter-block {
+  0%, 100% { transform: translateX(0) scale(1); }
+  30%      { transform: translateX(calc(var(--face, 1) * -8px)) scale(0.97); }
+}
+@keyframes fighter-press {
+  0%, 100% { transform: translateX(0) scale(1); }
+  45%      { transform: translateX(calc(var(--face, 1) * 16px)) scale(1.03); }
+}
+@keyframes fighter-victory {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-6px) scale(1.04); }
+}
+@keyframes fighter-defeat {
+  0%   { transform: rotate(0) translateY(0); opacity: 1; }
+  100% { transform: rotate(calc(var(--face, 1) * -70deg)) translateY(12px); opacity: 0.7; }
+}
+
+/* ── Fight choreography: CRT / RGB-glitch overlay ───────── */
+@keyframes scanline-roll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 3px; }
+}
+@keyframes glitch-burst {
+  0%   { opacity: 0;    transform: translateX(0);    clip-path: inset(0 0 0 0); }
+  15%  { opacity: 0.85; transform: translateX(-4px); clip-path: inset(18% 0 56% 0); }
+  35%  { opacity: 0.6;  transform: translateX(5px);  clip-path: inset(60% 0 14% 0); }
+  60%  { opacity: 0.75; transform: translateX(-2px); clip-path: inset(36% 0 40% 0); }
+  100% { opacity: 0;    transform: translateX(0);    clip-path: inset(0 0 0 0); }
+}
+@keyframes glitch-flash {
+  0%  { opacity: 0; }
+  12% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
