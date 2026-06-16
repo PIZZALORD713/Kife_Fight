@@ -74,10 +74,12 @@ brief recommended for Telegram/mobile play.
   per round (plus countdowns and 5s inter-round cooldowns) is ~2.5–3 minutes.
   For wagered MVP matches, consider single-round (or Bo3 as a higher-stakes
   option) to preserve the "quick adrenaline hit, rinse & repeat" loop.
-- **Effort allocation:** 100% of week 1 went into the layer the brief
-  explicitly deprioritized ("polish is not the priority"). The two pillars of
-  the thesis — *wagering* and *PvP* — have zero code. The next three weeks
-  must invert that ratio.
+- **Effort allocation:** Week 1 went entirely into the layer the brief
+  explicitly deprioritized ("polish is not the priority"), and the polish has
+  kept compounding since this snapshot — a procedural fight-choreography layer
+  and a role-based skill-check redesign both shipped after June 12. Game feel is
+  increasingly strong; meanwhile the two pillars of the thesis — *wagering* and
+  *PvP* — still have zero code. The next three weeks must invert that ratio.
 
 ---
 
