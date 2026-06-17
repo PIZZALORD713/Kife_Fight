@@ -18,6 +18,8 @@ export function BattleScreen({
   playerShield,
   rewardEvent,
   shieldBlockEvent,
+  attackEvent,
+  playerHurtEvent,
   roundNumber,
   playerRoundWins,
   opponentRoundWins,
@@ -108,8 +110,11 @@ export function BattleScreen({
       <FightStage
         playerHealth={playerHealth}
         opponentHealth={opponentHealth}
+        timeLeft={timeLeft}
         rewardEvent={rewardEvent}
         shieldBlockEvent={shieldBlockEvent}
+        attackEvent={attackEvent}
+        playerHurtEvent={playerHurtEvent}
         promptResult={promptResult}
       />
 
