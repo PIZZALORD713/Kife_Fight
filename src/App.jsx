@@ -28,6 +28,8 @@ export default function App() {
     playerShield,
     rewardEvent,
     shieldBlockEvent,
+    attackEvent,
+    playerHurtEvent,
     startMatch,
     startNextRound,
     handlePointerDown,
@@ -64,6 +66,8 @@ export default function App() {
           playerShield={playerShield}
           rewardEvent={rewardEvent}
           shieldBlockEvent={shieldBlockEvent}
+          attackEvent={attackEvent}
+          playerHurtEvent={playerHurtEvent}
           roundNumber={roundNumber}
           playerRoundWins={playerRoundWins}
           opponentRoundWins={opponentRoundWins}

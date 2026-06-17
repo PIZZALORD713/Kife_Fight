@@ -6,7 +6,10 @@
 // Placeholder render = a procedural humanoid silhouette so lunges/stumbles read
 // clearly without art. A real pack swaps <Silhouette> for a sprite-sheet blit;
 // the props (pack, clip, clipNonce, facing) stay identical.
-import { CLIP_ANIM } from '../../constants/choreography';
+import { CLIP_ANIM, CLIPS } from '../../constants/choreography';
+
+// Clips where the blade is actually swinging — they get a slash streak.
+const ATTACK_CLIPS = new Set([CLIPS.JAB, CLIPS.STRIKE, CLIPS.LUNGE, CLIPS.PRESS]);
 
 function Silhouette({ pack }) {
   const { accent, trim } = pack;
@@ -45,8 +48,22 @@ export function SpriteFighter({ pack, clip, clipNonce, facing = 'right', style }
 
       {/* keyed wrapper → React remounts it each beat, restarting the clip */}
       <div key={clipNonce} style={{ animation: CLIP_ANIM[clip] || CLIP_ANIM.IDLE, transformOrigin: 'bottom center' }}>
-        <div style={{ transform: `scaleX(${face}) scale(${depth})`, transformOrigin: 'bottom center' }}>
+        <div className="relative" style={{ transform: `scaleX(${face}) scale(${depth})`, transformOrigin: 'bottom center' }}>
           <Silhouette pack={pack} />
+          {ATTACK_CLIPS.has(clip) && (
+            <div
+              className="knife-slash pointer-events-none absolute"
+              style={{
+                bottom: '52px',
+                left: '40px',
+                width: '26px',
+                height: '7px',
+                borderRadius: '9999px',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.95))',
+                filter: 'blur(0.6px) drop-shadow(0 0 4px rgba(255,255,255,0.7))',
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

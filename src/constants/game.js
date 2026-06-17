@@ -18,6 +18,8 @@ export const PROMPT_PERFECT_DAMAGE = 10;
 export const BATTLE_DURATION = 45;
 export const RESULT_COOLDOWN = 5;
 export const OPPONENT_INTERVAL = 170;
+// How long the finisher choreography holds before cutting to the result screen.
+export const KO_HOLD = 1300;
 
 // Match format
 export const MAX_ROUNDS = 3;
