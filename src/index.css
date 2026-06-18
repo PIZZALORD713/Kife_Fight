@@ -70,3 +70,130 @@ body {
 .animate-glow-pulse {
   animation: glow-pulse 1.6s ease-in-out infinite;
 }
+
+/* ── Fight choreography: fighter clips ──────────────────── */
+/* --face: +1 faces right, -1 faces left, so one keyframe serves both fighters. */
+@keyframes fighter-idle {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50%      { transform: translateY(-2px) scaleY(1.015); }
+}
+@keyframes fighter-lunge {
+  0%   { transform: translateX(0) scale(1, 1); }
+  35%  { transform: translateX(calc(var(--face, 1) * 26px)) scale(1.06, 0.95); }
+  55%  { transform: translateX(calc(var(--face, 1) * 18px)) scale(1.02, 1); }
+  100% { transform: translateX(0) scale(1, 1); }
+}
+@keyframes fighter-strike {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  40%      { transform: translateX(calc(var(--face, 1) * 12px)) rotate(calc(var(--face, 1) * -3deg)); }
+}
+/* JAB: snappy poke for rapid mashing — short so a flurry reads as many jabs. */
+@keyframes fighter-jab {
+  0%   { transform: translateX(0) scaleX(1); }
+  40%  { transform: translateX(calc(var(--face, 1) * 30px)) scaleX(1.05); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+/* FLINCH: small recoil for taking a hit (lighter than a full STUMBLE). */
+@keyframes fighter-flinch {
+  0%   { transform: translateX(0) rotate(0); }
+  35%  { transform: translateX(calc(var(--face, 1) * -12px)) rotate(calc(var(--face, 1) * -5deg)); }
+  100% { transform: translateX(0) rotate(0); }
+}
+@keyframes fighter-stumble {
+  0%   { transform: translateX(0) rotate(0); }
+  30%  { transform: translateX(calc(var(--face, 1) * -24px)) rotate(calc(var(--face, 1) * -9deg)); }
+  60%  { transform: translateX(calc(var(--face, 1) * -14px)) rotate(calc(var(--face, 1) * -4deg)); }
+  100% { transform: translateX(0) rotate(0); }
+}
+@keyframes fighter-stun {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(calc(var(--face, 1) * -6px)) rotate(-4deg); }
+  40% { transform: translateX(calc(var(--face, 1) *  5px)) rotate(3deg); }
+  60% { transform: translateX(calc(var(--face, 1) * -4px)) rotate(-3deg); }
+  80% { transform: translateX(calc(var(--face, 1) *  3px)) rotate(2deg); }
+}
+@keyframes fighter-block {
+  0%, 100% { transform: translateX(0) scale(1); }
+  30%      { transform: translateX(calc(var(--face, 1) * -8px)) scale(0.97); }
+}
+@keyframes fighter-press {
+  0%, 100% { transform: translateX(0) scale(1); }
+  45%      { transform: translateX(calc(var(--face, 1) * 16px)) scale(1.03); }
+}
+@keyframes fighter-victory {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-6px) scale(1.04); }
+}
+@keyframes fighter-defeat {
+  0%   { transform: rotate(0) translateY(0); opacity: 1; }
+  100% { transform: rotate(calc(var(--face, 1) * -70deg)) translateY(12px); opacity: 0.7; }
+}
+
+/* ── Fight choreography: CRT / RGB-glitch overlay ───────── */
+@keyframes scanline-roll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 3px; }
+}
+@keyframes glitch-burst {
+  0%   { opacity: 0;    transform: translateX(0);    clip-path: inset(0 0 0 0); }
+  15%  { opacity: 0.85; transform: translateX(-4px); clip-path: inset(18% 0 56% 0); }
+  35%  { opacity: 0.6;  transform: translateX(5px);  clip-path: inset(60% 0 14% 0); }
+  60%  { opacity: 0.75; transform: translateX(-2px); clip-path: inset(36% 0 40% 0); }
+  100% { opacity: 0;    transform: translateX(0);    clip-path: inset(0 0 0 0); }
+}
+@keyframes glitch-flash {
+  0%  { opacity: 0; }
+  12% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+/* ── Hit-stop: freeze every CSS animation under the stage for a few frames ─ */
+/* Applied to the stage root on impact; the brief pause sells the contact. */
+.fx-hitstop,
+.fx-hitstop * {
+  animation-play-state: paused !important;
+}
+
+/* ── Floating damage numbers ────────────────────────────── */
+@keyframes dmg-float {
+  0%   { opacity: 0; transform: translateY(4px) scale(0.8); }
+  14%  { opacity: 1; transform: translateY(0) scale(1.12); }
+  32%  { transform: translateY(-2px) scale(1); }
+  100% { opacity: 0; transform: translateY(-30px) scale(0.95); }
+}
+.dmg-float { animation: dmg-float 0.9s ease-out forwards; }
+
+@keyframes dmg-crit {
+  0%   { opacity: 0; transform: scale(0.5) rotate(-6deg); }
+  16%  { opacity: 1; transform: scale(1.4) rotate(3deg); }
+  36%  { transform: scale(1.05) rotate(0); }
+  100% { opacity: 0; transform: translateY(-28px) scale(1); }
+}
+.dmg-crit { animation: dmg-crit 1s ease-out forwards; }
+
+/* ── Impact spark: a burst at the point of contact ──────── */
+@keyframes spark-pop {
+  0%   { opacity: 0; transform: scale(0.2) rotate(0); }
+  25%  { opacity: 1; transform: scale(1) rotate(12deg); }
+  100% { opacity: 0; transform: scale(1.6) rotate(38deg); }
+}
+.spark-pop { animation: spark-pop 320ms ease-out forwards; }
+
+/* ── Knife slash: a sweeping streak off the blade on attacks ─ */
+@keyframes knife-slash {
+  0%   { opacity: 0; transform: rotate(-45deg) scaleX(0.4); }
+  30%  { opacity: 0.95; }
+  65%  { opacity: 0.6; transform: rotate(35deg) scaleX(1); }
+  100% { opacity: 0; transform: rotate(55deg) scaleX(1); }
+}
+.knife-slash { animation: knife-slash 300ms ease-out forwards; transform-origin: left center; }
+
+/* ── KO stamp: the "this is the moment" punch-in ────────── */
+@keyframes ko-stamp {
+  0%   { opacity: 0; transform: scale(2.4); }
+  18%  { opacity: 1; transform: scale(0.9); }
+  30%  { transform: scale(1.05); }
+  80%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+.ko-stamp { animation: ko-stamp 1.25s ease-out forwards; }

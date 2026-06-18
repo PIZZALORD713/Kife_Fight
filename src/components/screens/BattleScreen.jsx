@@ -5,6 +5,7 @@ import { AttackButton } from '../AttackButton';
 import { TimingMeter } from '../TimingMeter';
 import { MashMeter } from '../MashMeter';
 import { RewardPopup } from '../RewardPopup';
+import { FightStage } from '../fight/FightStage';
 
 export function BattleScreen({
   playerHealth,
@@ -16,6 +17,8 @@ export function BattleScreen({
   playerShield,
   rewardEvent,
   shieldBlockEvent,
+  attackEvent,
+  playerHurtEvent,
   promptPhase,
   promptType,
   promptResult,
@@ -94,7 +97,16 @@ export function BattleScreen({
         promptResult={promptResult}
       />
 
-      <div className="flex-1 min-h-0" />
+      <FightStage
+        playerHealth={playerHealth}
+        opponentHealth={opponentHealth}
+        timeLeft={timeLeft}
+        rewardEvent={rewardEvent}
+        shieldBlockEvent={shieldBlockEvent}
+        attackEvent={attackEvent}
+        playerHurtEvent={playerHurtEvent}
+        promptResult={promptResult}
+      />
 
       <AttackButton
         combo={combo}

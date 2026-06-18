@@ -12,8 +12,16 @@ import {
   MAX_SHIELD,
   MAX_ROUNDS,
   ROUNDS_TO_WIN,
+  KO_HOLD,
 } from '../constants/game';
 import { usePromptSystem } from './usePromptSystem';
+import { sfx, haptic, unlockAudio } from '../audio/sfx';
+
+// Event ids and reward rolls live at module scope so the render-purity lint
+// doesn't flag the (legitimate) Math.random()/Date.now() used inside callbacks.
+const uid = () => Date.now() + Math.random();
+const rollReward = () => (Math.random() < 0.5 ? 'shield' : 'heal');
+const rollBonus = () => Math.random() < REWARD_BONUS_CHANCE;
 
 export function useGameState() {
   const [gameState, setGameState] = useState('lobby');
@@ -34,6 +42,8 @@ export function useGameState() {
   const [playerShield, setPlayerShield] = useState(0);
   const [rewardEvent, setRewardEvent] = useState(null);
   const [shieldBlockEvent, setShieldBlockEvent] = useState(null);
+  const [attackEvent, setAttackEvent] = useState(null);
+  const [playerHurtEvent, setPlayerHurtEvent] = useState(null);
 
   const comboRef = useRef(1);
   const battleEndedRef = useRef(false);
@@ -45,15 +55,17 @@ export function useGameState() {
   const opponentRoundWinsRef = useRef(0);
   const battleTimerRef = useRef(null);
   const opponentAIRef = useRef(null);
+  const koTimerRef = useRef(null);
+  const lastHurtSfxRef = useRef(0);
 
   const prompt = usePromptSystem({
     battleEndedRef,
     onSuccess: (tier) => {
       const damage = tier === 'perfect' ? PROMPT_PERFECT_DAMAGE : PROMPT_SUCCESS_DAMAGE;
+      const willKill = opponentHealthRef.current - damage <= 0;
       setOpponentHealth(h => {
         const next = Math.max(0, h - damage);
         opponentHealthRef.current = next;
-        if (next <= 0 && !battleEndedRef.current) endBattle();
         return next;
       });
       const next = Math.min(COMBO_MAX, comboRef.current + 1);
@@ -62,9 +74,9 @@ export function useGameState() {
 
       let reward = 'damage';
       if (tier === 'perfect') {
-        reward = Math.random() < 0.5 ? 'shield' : 'heal';
-      } else if (Math.random() < REWARD_BONUS_CHANCE) {
-        reward = Math.random() < 0.5 ? 'shield' : 'heal';
+        reward = rollReward();
+      } else if (rollBonus()) {
+        reward = rollReward();
       }
 
       if (reward === 'shield') {
@@ -81,24 +93,28 @@ export function useGameState() {
         });
       }
 
-      setRewardEvent({ id: Date.now() + Math.random(), tier, reward, damage });
+      setRewardEvent({ id: uid(), tier, reward, damage });
+      if (tier === 'perfect') sfx.perfect(); else sfx.crit();
+      haptic(tier === 'perfect' ? [15, 25, 35] : 18);
+      if (willKill) endByKO();
     },
     onFail: () => {
       comboRef.current = 1;
       setCombo(1);
+      sfx.stun();
+      haptic([20, 40]);
     },
   });
 
   const clearBattleTimers = useCallback(() => {
     clearInterval(battleTimerRef.current);
     clearInterval(opponentAIRef.current);
+    clearTimeout(koTimerRef.current);
     prompt.clearPromptTimers();
   }, [prompt]);
 
-  const endBattle = useCallback(() => {
-    if (battleEndedRef.current) return;
-    battleEndedRef.current = true;
-    clearBattleTimers();
+  // Compute the round/match outcome and move to the result screen.
+  const finalizeRound = useCallback(() => {
     const ph = playerHealthRef.current;
     const oh = opponentHealthRef.current;
     let result;
@@ -128,11 +144,33 @@ export function useGameState() {
       else                    overall = 'draw';
       setMatchResult(overall);
       setGameState('result');
+      if (overall === 'win') sfx.win();
+      else if (overall === 'lose') sfx.lose();
     } else {
       setGameState('roundResult');
+      if (result === 'win') sfx.win();
+      else if (result === 'lose') sfx.lose();
     }
     setResultCooldown(RESULT_COOLDOWN);
-  }, [clearBattleTimers]);
+  }, []);
+
+  // Time ran out (both alive) → resolve immediately on the decision.
+  const endByTimeout = useCallback(() => {
+    if (battleEndedRef.current) return;
+    battleEndedRef.current = true;
+    clearBattleTimers();
+    finalizeRound();
+  }, [clearBattleTimers, finalizeRound]);
+
+  // Someone hit 0 HP → crunch + hold the finisher, THEN cut to the result.
+  const endByKO = useCallback(() => {
+    if (battleEndedRef.current) return;
+    battleEndedRef.current = true;
+    clearBattleTimers();
+    sfx.ko();
+    haptic([50, 40, 80]);
+    koTimerRef.current = setTimeout(finalizeRound, KO_HOLD);
+  }, [clearBattleTimers, finalizeRound]);
 
   const startRound = useCallback(() => {
     clearBattleTimers();
@@ -155,9 +193,12 @@ export function useGameState() {
     playerShieldRef.current = 0;
     setRewardEvent(null);
     setShieldBlockEvent(null);
+    setAttackEvent(null);
+    setPlayerHurtEvent(null);
   }, [clearBattleTimers, prompt]);
 
   const startMatch = useCallback(() => {
+    unlockAudio();
     roundNumberRef.current = 1;
     playerRoundWinsRef.current = 0;
     opponentRoundWinsRef.current = 0;
@@ -180,23 +221,31 @@ export function useGameState() {
   }, [clearBattleTimers, prompt]);
 
   const handleAttack = useCallback(() => {
-    if (gameState !== 'battle' || prompt.isStunnedRef.current) return;
+    if (gameState !== 'battle' || battleEndedRef.current || prompt.isStunnedRef.current) return;
     if (prompt.promptPhaseRef.current === 'active') {
       prompt.handleAttackDuringPrompt();
       return;
     }
     const damage = comboRef.current;
+    const willKill = opponentHealthRef.current - damage <= 0;
     setOpponentHealth(h => {
       const next = Math.max(0, h - damage);
       opponentHealthRef.current = next;
-      if (next <= 0 && !battleEndedRef.current) endBattle();
       return next;
     });
     setPlayerClicks(c => c + 1);
-  }, [gameState, prompt, endBattle]);
+    setAttackEvent({ id: uid(), damage });
+    if (willKill) {
+      endByKO();
+    } else {
+      sfx.hit();
+      haptic(6);
+    }
+  }, [gameState, prompt, endByKO]);
 
   const handlePointerDown = useCallback(() => {
-    if (gameState !== 'battle' || prompt.isStunnedRef.current) return;
+    unlockAudio();
+    if (gameState !== 'battle' || battleEndedRef.current || prompt.isStunnedRef.current) return;
     if (prompt.handlePointerDown()) return;
     handleAttack();
   }, [gameState, prompt, handleAttack]);
@@ -205,10 +254,11 @@ export function useGameState() {
     prompt.handlePointerUp();
   }, [prompt]);
 
-  // Countdown → battle transition
+  // Countdown → battle transition (with audio cues)
   useEffect(() => {
     if (gameState !== 'countdown') return;
-    if (countdown <= 0) { setGameState('battle'); return; }
+    if (countdown <= 0) { setGameState('battle'); sfx.go(); return; }
+    sfx.countdownTick();
     const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [gameState, countdown]);
@@ -219,7 +269,7 @@ export function useGameState() {
 
     battleTimerRef.current = setInterval(() => {
       setTimeLeft(t => {
-        if (t <= 1) { endBattle(); return 0; }
+        if (t <= 1) { endByTimeout(); return 0; }
         return t - 1;
       });
     }, 1000);
@@ -231,14 +281,27 @@ export function useGameState() {
       if (playerShieldRef.current > 0) {
         playerShieldRef.current -= 1;
         setPlayerShield(playerShieldRef.current);
-        setShieldBlockEvent(Date.now() + Math.random());
+        setShieldBlockEvent(uid());
+        sfx.block();
+        haptic(14);
       } else {
+        const willKill = playerHealthRef.current - damage <= 0;
         setPlayerHealth(h => {
           const next = Math.max(0, h - damage);
           playerHealthRef.current = next;
-          if (next <= 0 && !battleEndedRef.current) endBattle();
           return next;
         });
+        setPlayerHurtEvent({ id: uid(), damage });
+        if (willKill) {
+          endByKO();
+        } else {
+          const t = performance.now();
+          if (t - lastHurtSfxRef.current > 250) {
+            lastHurtSfxRef.current = t;
+            sfx.hurt();
+            haptic(10);
+          }
+        }
       }
       setOpponentClicks(c => c + 1);
     }, OPPONENT_INTERVAL + Math.random() * 80);
@@ -292,6 +355,8 @@ export function useGameState() {
     playerShield,
     rewardEvent,
     shieldBlockEvent,
+    attackEvent,
+    playerHurtEvent,
     startMatch,
     startNextRound,
     returnToLobby,

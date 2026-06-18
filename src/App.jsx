@@ -29,6 +29,8 @@ export default function App() {
     playerShield,
     rewardEvent,
     shieldBlockEvent,
+    attackEvent,
+    playerHurtEvent,
     startMatch,
     startNextRound,
     returnToLobby,
@@ -74,6 +76,8 @@ export default function App() {
           playerShield={playerShield}
           rewardEvent={rewardEvent}
           shieldBlockEvent={shieldBlockEvent}
+          attackEvent={attackEvent}
+          playerHurtEvent={playerHurtEvent}
           promptPhase={prompt.promptPhase}
           promptType={prompt.promptType}
           promptResult={prompt.promptResult}
