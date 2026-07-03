@@ -6,7 +6,7 @@ for the full concept, status, and roadmap.)
 
 ## 🎮 Play it
 
-**Live (Practice Mode):** https://kife-fight.vercel.app
+**Live (Practice Mode):** https://knifefight.vercel.app
 
 > Currently single-player practice mode — the opponent is a local AI bot, and
 > stakes are simulated. Wallet connection, wagering, and PvP are on the
@@ -35,5 +35,5 @@ npm run lint      # eslint
 
 ## Deployment
 
-Hosted on Vercel at the link above. Pushes to the default branch deploy
-automatically via Vercel's Git integration.
+Hosted on Vercel at the link above. Pushes to `main` deploy automatically via
+Vercel's Git integration (Production branch = `main`).
