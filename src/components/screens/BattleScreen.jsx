@@ -5,7 +5,6 @@ import { AttackButton } from '../AttackButton';
 import { TimingMeter } from '../TimingMeter';
 import { MashMeter } from '../MashMeter';
 import { RewardPopup } from '../RewardPopup';
-import { RoundIndicator } from '../RoundIndicator';
 import { FightStage } from '../fight/FightStage';
 
 export function BattleScreen({
@@ -20,9 +19,6 @@ export function BattleScreen({
   shieldBlockEvent,
   attackEvent,
   playerHurtEvent,
-  roundNumber,
-  playerRoundWins,
-  opponentRoundWins,
   promptPhase,
   promptType,
   promptResult,
@@ -45,12 +41,6 @@ export function BattleScreen({
       }`}
     >
       <RewardPopup rewardEvent={rewardEvent} />
-
-      <RoundIndicator
-        roundNumber={roundNumber}
-        playerRoundWins={playerRoundWins}
-        opponentRoundWins={opponentRoundWins}
-      />
 
       <div className="flex gap-3 items-start shrink-0">
         <HealthBar label="YOU" health={playerHealth} shield={playerShield} blockEvent={shieldBlockEvent} />

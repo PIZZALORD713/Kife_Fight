@@ -214,6 +214,12 @@ export function useGameState() {
     startRound();
   }, [startRound]);
 
+  const returnToLobby = useCallback(() => {
+    clearBattleTimers();
+    prompt.reset();
+    setGameState('lobby');
+  }, [clearBattleTimers, prompt]);
+
   const handleAttack = useCallback(() => {
     if (gameState !== 'battle' || battleEndedRef.current || prompt.isStunnedRef.current) return;
     if (prompt.promptPhaseRef.current === 'active') {
@@ -353,6 +359,7 @@ export function useGameState() {
     playerHurtEvent,
     startMatch,
     startNextRound,
+    returnToLobby,
     handlePointerDown,
     handlePointerUp,
     prompt,

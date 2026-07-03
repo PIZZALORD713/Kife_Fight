@@ -1,6 +1,26 @@
 // src/components/screens/RoundResultScreen.jsx
 import { ROUNDS_TO_WIN } from '../../constants/game';
-import { RoundIndicator } from '../RoundIndicator';
+
+const ROUND_THEME = {
+  win: {
+    icon: '✅',
+    color: 'text-green-400',
+    glow: 'drop-shadow-[0_0_18px_rgba(74,222,128,0.55)]',
+    title: (round) => `YOU WIN ROUND ${round}!`,
+  },
+  lose: {
+    icon: '❌',
+    color: 'text-red-400',
+    glow: 'drop-shadow-[0_0_18px_rgba(248,113,113,0.55)]',
+    title: (round) => `YOU LOSE ROUND ${round}`,
+  },
+  draw: {
+    icon: '➖',
+    color: 'text-yellow-400',
+    glow: 'drop-shadow-[0_0_18px_rgba(250,204,21,0.5)]',
+    title: (round) => `ROUND ${round} — DRAW`,
+  },
+};
 
 export function RoundResultScreen({
   roundResult,
@@ -25,27 +45,19 @@ export function RoundResultScreen({
     subtitle = 'Keep fighting!';
   }
 
+  const theme = ROUND_THEME[roundResult] || ROUND_THEME.draw;
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
-      <div className="text-7xl" style={{ fontSize: 'clamp(3.5rem, 18vw, 5rem)' }}>
-        {roundResult === 'win' ? '✅' : roundResult === 'lose' ? '❌' : '➖'}
+      <div key={roundNumber} className={`animate-pop-in ${theme.glow}`} style={{ fontSize: 'clamp(3.5rem, 18vw, 5rem)' }}>
+        {theme.icon}
       </div>
 
       <div>
-        <h2 className={`font-black text-3xl ${
-          roundResult === 'win' ? 'text-green-400' :
-          roundResult === 'lose' ? 'text-red-400' : 'text-yellow-400'
-        }`}>
-          {roundResult === 'win' ? 'ROUND WON!' : roundResult === 'lose' ? 'ROUND LOST' : 'ROUND DRAWN'}
-        </h2>
+        <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Round {roundNumber} Result</div>
+        <h2 className={`font-black text-3xl ${theme.color}`}>{theme.title(roundNumber)}</h2>
         <p className="text-gray-400 text-sm mt-1">{subtitle}</p>
       </div>
-
-      <RoundIndicator
-        roundNumber={roundNumber}
-        playerRoundWins={playerRoundWins}
-        opponentRoundWins={opponentRoundWins}
-      />
 
       <div className="bg-gray-700/50 rounded-xl p-4 w-full text-sm space-y-1.5">
         <div className="flex justify-between"><span className="text-gray-400">Your HP</span><span className="font-mono text-white">{Math.ceil(playerHealth)}</span></div>

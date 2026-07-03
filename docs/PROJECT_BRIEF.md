@@ -3,7 +3,7 @@
 **Revision date:** June 12, 2026 (end of Week 1 of the 4-week MVP timeline)
 **Supersedes:** Original pitch brief (pre-development)
 **Repo:** `pizzalord713/kife_fight`
-**Live (Practice Mode):** https://kife-fight.vercel.app
+**Live (Practice Mode):** https://knifefight.vercel.app
 
 ---
 
