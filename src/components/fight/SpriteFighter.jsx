@@ -2,14 +2,15 @@
 //
 // Plays one clip for one fighter. Presentational only: the director tells it
 // which clip to show and bumps `clipNonce` to restart the animation each beat.
+// The root wrapper is forwarded so FightStage can WAAPI-animate its position
+// directly (the dash-to-contact / knockback pass) on top of this clip's own
+// local pose flourish.
 //
 // Placeholder render = a procedural humanoid silhouette so lunges/stumbles read
 // clearly without art. A real pack swaps <Silhouette> for a sprite-sheet blit;
 // the props (pack, clip, clipNonce, facing) stay identical.
-import { CLIP_ANIM, CLIPS } from '../../constants/choreography';
-
-// Clips where the blade is actually swinging — they get a slash streak.
-const ATTACK_CLIPS = new Set([CLIPS.JAB, CLIPS.STRIKE, CLIPS.LUNGE, CLIPS.PRESS]);
+import { forwardRef } from 'react';
+import { CLIP_ANIM, ATTACK_CLIPS } from '../../constants/choreography';
 
 function Silhouette({ pack }) {
   const { accent, trim } = pack;
@@ -34,12 +35,16 @@ function Silhouette({ pack }) {
   );
 }
 
-export function SpriteFighter({ pack, clip, clipNonce, facing = 'right', style }) {
+export const SpriteFighter = forwardRef(function SpriteFighter(
+  { pack, clip, clipNonce, facing = 'right', style },
+  ref
+) {
   const face = facing === 'right' ? 1 : -1;
   const depth = (style && style['--depth']) || 1;
 
   return (
     <div
+      ref={ref}
       className="absolute -translate-x-1/2 transition-[left] duration-300 ease-out"
       style={{ '--face': face, ...style }}
     >
@@ -56,7 +61,7 @@ export function SpriteFighter({ pack, clip, clipNonce, facing = 'right', style }
               style={{
                 bottom: '52px',
                 left: '40px',
-                width: '26px',
+                width: '34px',
                 height: '7px',
                 borderRadius: '9999px',
                 background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.95))',
@@ -68,4 +73,4 @@ export function SpriteFighter({ pack, clip, clipNonce, facing = 'right', style }
       </div>
     </div>
   );
-}
+});

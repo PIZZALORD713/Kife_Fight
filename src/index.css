@@ -179,12 +179,13 @@ body {
 }
 .spark-pop { animation: spark-pop 320ms ease-out forwards; }
 
-/* ── Knife slash: a sweeping streak off the blade on attacks ─ */
+/* ── Knife slash: a sweeping streak that actually reaches forward ─ */
+/* --face flips direction so the swing always points toward the opponent. */
 @keyframes knife-slash {
-  0%   { opacity: 0; transform: rotate(-45deg) scaleX(0.4); }
-  30%  { opacity: 0.95; }
-  65%  { opacity: 0.6; transform: rotate(35deg) scaleX(1); }
-  100% { opacity: 0; transform: rotate(55deg) scaleX(1); }
+  0%   { opacity: 0; transform: translateX(0) rotate(-50deg) scaleX(0.5); }
+  30%  { opacity: 1; }
+  65%  { opacity: 0.7; transform: translateX(calc(var(--face, 1) * 14px)) rotate(40deg) scaleX(1.15); }
+  100% { opacity: 0; transform: translateX(calc(var(--face, 1) * 18px)) rotate(60deg) scaleX(1.15); }
 }
 .knife-slash { animation: knife-slash 300ms ease-out forwards; transform-origin: left center; }
 

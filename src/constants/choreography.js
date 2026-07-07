@@ -77,6 +77,26 @@ const SHAKE_PX = { XS: 2, S: 4, M: 8, L: 14 };
 export const shakePixels = (size, tone) =>
   (SHAKE_PX[size] || 0) * (TONE_SHAKE[tone] || 1);
 
+// Clips where the fighter is actively delivering a strike — used to derive
+// attacker/defender so the stage can dash the attacker into range and knock
+// the defender back, instead of two isolated local wobbles.
+export const ATTACK_CLIPS = new Set([CLIPS.JAB, CLIPS.STRIKE, CLIPS.LUNGE, CLIPS.PRESS]);
+
+// How far/long each attack clip's contact-dash runs, matched to that clip's own
+// CLIP_ANIM duration and the frame where its pose reaches full extension —
+// keeps the body-position dash and the local pose flourish arriving together.
+export const DASH_TIMING = {
+  [CLIPS.JAB]:    { duration: 240, contact: 0.42 },
+  [CLIPS.STRIKE]: { duration: 420, contact: 0.42 },
+  [CLIPS.LUNGE]:  { duration: 520, contact: 0.50 },
+  [CLIPS.PRESS]:  { duration: 520, contact: 0.48 },
+};
+export const DEFAULT_DASH_TIMING = { duration: 320, contact: 0.4 };
+
+// A defender who's BLOCKing absorbs most of the shove — everyone else (a real
+// flinch/stumble) takes the full knockback.
+export const KNOCKBACK_MULT = { [CLIPS.BLOCK]: 0.35 };
+
 // The beat grammar: a gameplay event → a paired beat (aggressor + defender
 // clips, FX, and the contact frame when the hit lands). This is the table the
 // choreography director reads.
